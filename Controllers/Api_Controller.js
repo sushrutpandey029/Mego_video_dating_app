@@ -4,9 +4,11 @@ export const userregister = async (req, res) => {
     try {
         const body = req.body;
         const { phonenumber, name, email, age, gender,
-            relationship, interest, profileimage,
+            relationship, interest,
             Imageone, Imagetwo, Imagethree, Imagefour,
             Imagefive, latitude, longitude } = body
+
+            let profileimage = null;
 
 
         if (!phonenumber || !name || !email || !age || !gender || !relationship || !interest || !profileimage || !latitude || !longitude) {
@@ -52,6 +54,11 @@ export const userregister = async (req, res) => {
                 message:"Email is allready in Use"
             })
          }
+
+          // If a profile image is uploaded, store only the file name
+        if (req.file) {
+            profileimage = path.basename(req.file.path); // Save only the file name (e.g., 'image-xyz.jpg')
+        }
 
 
         const data = new usermodel({
