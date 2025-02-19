@@ -23,6 +23,11 @@ const usermodel = sequelize.define('mego_users', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    about:{
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue:null
+    },
     looking_for: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -35,30 +40,37 @@ const usermodel = sequelize.define('mego_users', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
     Imageone: {
         type: DataTypes.STRING,
         allowNull: true,
     },
+
     Imagetwo: {
         type: DataTypes.STRING,
         allowNull: true,
     },
+
     Imagethree: {
         type: DataTypes.STRING,
         allowNull: true,
     },
+
     Imagefour: { 
         type: DataTypes.STRING,
         allowNull: true,
     },
+
     Imagefive: {
         type: DataTypes.STRING,
         allowNull: true,
     },
+
     latitude: {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    
     longitude: { 
         type: DataTypes.STRING,
         allowNull: false, // Ensure longitude is not nullable if that's your requirement

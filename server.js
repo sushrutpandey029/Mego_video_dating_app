@@ -62,7 +62,7 @@ app.use("/", adminRouter);
 
 app.use("/api", routernew);
 
-// Create HTTP server for socket and express
+// Create HTTP server for socket and express 
 const server = createServer(app);
 
 // console.log(server);
