@@ -1,8 +1,9 @@
 import express from "express";
 import { createServer } from "http";
 import sequelize from "./Database/MySql.js";
-
+import path from "path"
 import routernew from './Routes/apiroute.js'
+import adminrouter from "./Routes/adminroute.js";
 
 import dotenv from "dotenv";
 import { initSocket } from "./socket.js"; // Import your socket initialization function
@@ -14,9 +15,11 @@ const port = process.env.Port || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use('/', routernew);
+app.use('/',adminrouter);
+app.use('/api', routernew);
 
-// Create HTTP server for socket and express
+
+// Create HTTP server for socket and express 
 const server = createServer(app);
 
 console.log(server);
