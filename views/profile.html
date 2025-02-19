@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+</head>
+<body>
+    <div>
+      <form id="AdminProfile" action="/update" method="POST">
+            <div class="form-group">
+                <label for="exampleInputfullname">fullname</label>
+                <input type="text" class="form-control" name="fullname" id="exampleInputfullname" value="{{user.fullname}}"placeholder="fullname">
+              </div>
+            <div class="form-group">
+              <label for="exampleInputEmail1">Email address</label>
+              <input type="email" class="form-control" name="email" id="exampleInputEmail1" value = "{{user.email}}"aria-describedby="emailHelp" placeholder="Enter email">
+              <!-- <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> -->
+            </div>
+            <div class="form-group">
+              <label for="exampleInputphoneNumber">phoneNumber</label>
+              <input type="text" class="form-control" name="phoneNumber" id="exampleInputphoneNumber" value= "{{user.phoneNumber}}" placeholder="phoneNumber">
+            </div>
+        
+            <button type="submit" class="btn btn-primary">update</button>
+          </form>
+    </div>
+</body>
+</html>
