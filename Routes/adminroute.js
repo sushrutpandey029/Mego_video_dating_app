@@ -8,7 +8,8 @@ import {
   ShowProfile,
   updateProfile,
   HandelChangPassword,
-  passwordChange
+  passwordChange,
+  TotalUser
 } from "../Controllers/Admin_Controller.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 
@@ -23,6 +24,7 @@ router.get("/showProfile",ShowProfile);
 router.post("/update",updateProfile);
 router.post('/change-password/:id', HandelChangPassword);
 router.get('/change-password', passwordChange);
+router.get('/totaluser', TotalUser);
 
 
 export default router;

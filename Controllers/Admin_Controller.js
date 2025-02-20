@@ -285,3 +285,8 @@ export const passwordChange = async (req, res) => {
   console.log("user", req.session.user);
   res.render("changePassword", { user: req.session.user });
 };
+
+
+export const TotalUser = async (req,res) => {
+  res.render("totalUser");
+}
