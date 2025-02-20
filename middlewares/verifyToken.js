@@ -5,9 +5,7 @@ dotenv.config();
 
 export const verifyToken = async (req, res, next) => {
   try {
-    const token = req.session?.user?.accessToken || null;
-    console.log("token",token)
-    console.log("session", req.session);
+    const token = req.session?.admin?.accessToken || null;
     if (!token) {
       req.flash("error", "Access Denied! Please log in.");
       return res.redirect("/");

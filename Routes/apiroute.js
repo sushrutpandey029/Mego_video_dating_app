@@ -15,7 +15,7 @@ router.get('/',(req,res)=>{
 
 router.post('/insertuser', upload.single('profileimage'), userregister)
 
-router.post('/userlogin', userlogin);
+router.get('/userlogin', userlogin);
 
 
 export default router;
