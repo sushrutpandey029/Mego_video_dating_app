@@ -8,7 +8,9 @@ import {
   ShowProfile,
   updateProfile,
   HandelChangPassword,
-  passwordChange
+  passwordChange,
+  renderMaleUser,
+  renderFemaleUser
 } from "../Controllers/Admin_Controller.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 
@@ -19,10 +21,14 @@ router.get("/", renderAdminLogin);
 router.get("/dashboard",verifyToken, renderDashboard);
 router.post('/adminRegister',adminRegister);
 router.get("/logout",handleLogout);
-router.get("/showProfile",ShowProfile);
-router.post("/update",updateProfile);
-router.post('/change-password/:id', HandelChangPassword);
-router.get('/change-password', passwordChange);
+router.get("/showProfile",verifyToken,ShowProfile);
+router.post("/update",verifyToken,updateProfile);
+router.post('/change-password/:id',verifyToken, HandelChangPassword);
+router.get('/change-password',verifyToken, passwordChange);
+router.get("/male-users",verifyToken, renderMaleUser);
+router.get("/female-users",verifyToken, renderFemaleUser);
+
+
 
 
 export default router;

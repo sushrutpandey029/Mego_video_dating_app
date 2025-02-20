@@ -5,8 +5,8 @@
         <!--end::To the end-->
         <!--begin::Copyright-->
         <strong>
-          Copyright &copy; 2014-2024&nbsp;
-          <a href="#" class="text-decoration-none">Mego Dating</a>.
+          Copyright &copy; 2025&nbsp;
+          <a href="/dashboard" class="text-decoration-none">Mego Dating</a>.
         </strong>
         All rights reserved.
         <!--end::Copyright-->
@@ -18,6 +18,12 @@
 <!--end::App Wrapper-->
 <!--begin::Script-->
 <!--begin::Third Party Plugin(OverlayScrollbars)-->
+
+ <script>
+        $(document).ready(function () {
+            $("#userTable").DataTable();
+        });
+    </script>
 <script
   src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"
   integrity="sha256-dghWARbRe2eLlIJ56wNB+b760ywulqK3DzZYEpsg2fQ="
@@ -89,6 +95,8 @@
 ></script>
 <!-- ChartJS -->
 <script>
+
+  
   // NOTICE!! DO NOT USE ANY OF THIS JAVASCRIPT
   // IT'S ALL JUST JUNK FOR DEMO
   // ++++++++++++++++++++++++++++++++++++++++++
@@ -267,6 +275,7 @@
   const sparkline3 = new ApexCharts(document.querySelector('#sparkline-3'), option_sparkline3);
   sparkline3.render();
 </script>
+
 <!--end::Script-->
 </body>
 <!--end::Body-->

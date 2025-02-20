@@ -24,18 +24,18 @@ export const handleAdminLogin = async (req, res) => {
       return res.redirect("/");
     }
     //check if user exist or not
-    const user = await adminModel.findOne({ where: { email } });
-    if (!user) {
-      req.flash("error", "User is not registered, please signup first.");
+    const admin = await adminModel.findOne({ where: { email } });
+    if (!admin) {
+      req.flash("error", "admin is not registered, please signup first.");
       return res.redirect("/");
     }
     //check password
-    if (await bcrypt.compare(password, user.password)) {
+    if (await bcrypt.compare(password, admin.password)) {
       //creating jwt token
       const payload = {
-        name: user.fullname,
-        email: user.email,
-        id: user.id,
+        name: admin.fullname,
+        email: admin.email,
+        id: admin.id,
       };
 
       const options = {
@@ -43,16 +43,15 @@ export const handleAdminLogin = async (req, res) => {
       };
 
       const token = jwt.sign(payload, process.env.JWT_SECRET, options);
-      // console.log("token", token);
 
-      user.token = token;
-      user.password = undefined;
-      user.accessToken = token;
-      // console.log("user access token",user.accessToken);
+      admin.token = token;
+      admin.password = undefined;
+      admin.accessToken = token;
+      // console.log("admin access token",admin.accessToken);
 
-      req.session.user = user;
+      req.session.admin = admin;
 
-      // console.log("session", req.session);
+      console.log("admin-session", req.session);
       req.flash("success", "Logged in successfully, Welcome to home page...");
       return res.redirect("/dashboard");
     } else {
@@ -119,7 +118,7 @@ export const adminRegister = async (req, res) => {
 export const renderDashboard = async (req, res) => {
   try {
     const user = await usermodel.findAll();
-    console.log("user", user);
+    // console.log("user", user);
 
     const totalUsers = user.length;
     const maleUsers = user.filter((user) => user.gender === "male").length;
@@ -131,9 +130,11 @@ export const renderDashboard = async (req, res) => {
       femaleUsers,
     };
 
-    console.log("countUsers", countUsers);
+    
+    // req.session.countUsers = countUsers;
+    console.log("session-data",req.session);
 
-    return res.render("dashboard", { user: req.session.user, countUsers });
+    return res.render("dashboard", { user: req.session.admin, countUsers });
   } catch (err) {
     console.log(err);
   }
@@ -161,8 +162,8 @@ export const handleLogout = async (req, res) => {
 
 export const ShowProfile = async (req, res) => {
   try {
-    console.log("session-dashboard", req.session.user);
-    return res.render("profile", { user: req.session.user });
+    console.log("session-dashboard", req.session.admin);
+    return res.render("profile", { admin: req.session.admin });
   } catch (err) {
     console.log(err);
   }
@@ -171,7 +172,7 @@ export const ShowProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber } = req.body;
-    const adminId = req.session.user.id;
+    const adminId = req.session.admin.id;
 
     console.log("hello", fullname, email, phoneNumber);
 
@@ -282,6 +283,24 @@ export const HandelChangPassword = async (req, res) => {
 };
 
 export const passwordChange = async (req, res) => {
-  console.log("user", req.session.user);
-  res.render("changePassword", { user: req.session.user });
+  console.log("user", req.session.admin);
+  res.render("changePassword", { user: req.session.admin });
 };
+
+export const renderMaleUser =async (req , res) => {
+  try{
+    const user = await usermodel.findAll({where:{gender:"male"}});
+    console.log("male-user",user);
+    return res.render("maleUser",{user});
+  }catch(err){
+    console.log(err)
+  }
+}
+
+export const renderFemaleUser = (req , res) => {
+  try{
+    return res.render("femaleUser");
+  }catch(err){
+    console.log(err)
+  }
+}
