@@ -10,7 +10,9 @@ import {
   HandelChangPassword,
   passwordChange,
   renderMaleUser,
-  renderFemaleUser
+  renderFemaleUser,
+  renderEditUser,
+  renderTotalUser
 } from "../Controllers/Admin_Controller.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
 
@@ -25,8 +27,12 @@ router.get("/showProfile",verifyToken,ShowProfile);
 router.post("/update",verifyToken,updateProfile);
 router.post('/change-password/:id',verifyToken, HandelChangPassword);
 router.get('/change-password',verifyToken, passwordChange);
-router.get("/male-users",verifyToken, renderMaleUser);
+router.get("/users/male",verifyToken, renderMaleUser);
 router.get("/female-users",verifyToken, renderFemaleUser);
+router.get("/edit-user",verifyToken,renderEditUser);
+router.get("/users/female",verifyToken,renderFemaleUser);
+router.get("/users/male",verifyToken,renderMaleUser);
+router.get("/users",verifyToken,renderTotalUser);
 
 
 

@@ -287,20 +287,41 @@ export const passwordChange = async (req, res) => {
   res.render("changePassword", { user: req.session.admin });
 };
 
-export const renderMaleUser =async (req , res) => {
+export const renderTotalUser =async (req , res) => {
   try{
-    const user = await usermodel.findAll({where:{gender:"male"}});
-    console.log("male-user",user);
-    return res.render("maleUser",{user});
+    const user = await usermodel.findAll();
+    console.log("total-user",user);
+    return res.render("user-list",{user});
   }catch(err){
     console.log(err)
   }
 }
 
-export const renderFemaleUser = (req , res) => {
+export const renderMaleUser =async (req , res) => {
   try{
-    return res.render("femaleUser");
+    const user = await usermodel.findAll({where:{gender:"male"}});
+    console.log("male-user",user);
+    return res.render("user-list",{user});
   }catch(err){
     console.log(err)
+  }
+}
+
+export const renderFemaleUser =async (req , res) => {
+  try{
+    const user = await usermodel.findAll({where:{gender:"female"}});
+
+    return res.render("user-list",{user});
+  }catch(err){
+    console.log(err)
+  }
+}
+
+export const renderEditUser = async(req, res) => {
+  try{
+
+    return res.render("editUser");
+  }catch(err){
+    console.log("err",err);
   }
 }

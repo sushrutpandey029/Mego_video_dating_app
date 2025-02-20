@@ -124,10 +124,22 @@ export const userlogin = async (req, res) => {
   
     return res.status(201).json({
         success: true,
-        message: "users",
+        message: "Logged In Successfully.",
         data: userlogin
     })
 
+}
+
+export const userUpdate = async (req, res) => {
+    try{
+
+    }catch(err){
+        return res.status(500).json({
+            success: false,
+            message: "Internal server err",
+            err: err.message
+        })
+    }
 }
 
 
