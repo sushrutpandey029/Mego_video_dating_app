@@ -24,18 +24,18 @@ export const handleAdminLogin = async (req, res) => {
       return res.redirect("/");
     }
     //check if user exist or not
-    const user = await adminModel.findOne({ where: { email } });
-    if (!user) {
-      req.flash("error", "User is not registered, please signup first.");
+    const admin = await adminModel.findOne({ where: { email } });
+    if (!admin) {
+      req.flash("error", "admin is not registered, please signup first.");
       return res.redirect("/");
     }
     //check password
-    if (await bcrypt.compare(password, user.password)) {
+    if (await bcrypt.compare(password, admin.password)) {
       //creating jwt token
       const payload = {
-        name: user.fullname,
-        email: user.email,
-        id: user.id,
+        name: admin.fullname,
+        email: admin.email,
+        id: admin.id,
       };
 
       const options = {
@@ -45,12 +45,12 @@ export const handleAdminLogin = async (req, res) => {
       const token = jwt.sign(payload, process.env.JWT_SECRET, options);
       // console.log("token", token);
 
-      user.token = token;
-      user.password = undefined;
-      user.accessToken = token;
-      // console.log("user access token",user.accessToken);
+      admin.token = token;
+      admin.password = undefined;
+      admin.accessToken = token;
+      // console.log("admin access token",admin.accessToken);
 
-      req.session.user = user;
+      req.session.admin = admin;
 
       // console.log("session", req.session);
       req.flash("success", "Logged in successfully, Welcome to home page...");

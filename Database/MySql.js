@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
 
-const sequelize  = new Sequelize('megodatingapp','root','vivek',{
+const sequelize  = new Sequelize('megodatingapp','root','root@123',{
     host: '127.0.0.1',  // Replace with the actual hostname
   dialect: 'mysql',
   port: 3306  // Default MySQL port
