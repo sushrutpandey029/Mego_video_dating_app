@@ -1,8 +1,9 @@
 import express from 'express'
 
-import {userregister, userlogin} from '../Controllers/Api_Controller.js'
+import {userregister, userlogin, userUpdate} from '../Controllers/Api_Controller.js'
 
 import upload from '../Middlewares/ProfileUpload.js'
+
 
 const router = express.Router();
 
@@ -16,6 +17,8 @@ router.get('/',(req,res)=>{
 router.post('/insertuser', upload.single('profileimage'), userregister)
 
 router.get('/userlogin', userlogin);
+
+router.post('/updateUser', userUpdate);
 
 
 export default router;

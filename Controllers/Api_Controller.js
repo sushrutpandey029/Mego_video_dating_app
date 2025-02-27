@@ -12,7 +12,7 @@ export const userregister = async (req, res) => {
 
         console.log("body data", body)
 
-        if (!phonenumber || !name || !email || !age || !gender || !relationship || !interest || !latitude || !longitude) {
+        if (!phonenumber || !name || !email || !age || !gender || !relationship || !interest ||!relationship || !latitude || !longitude) {
             return res.status(401).json({
                 success: false,
                 message: "All filed are required"
@@ -124,10 +124,82 @@ export const userlogin = async (req, res) => {
   
     return res.status(201).json({
         success: true,
-        message: "users",
+        message: "Logged In Successfully.",
         data: userlogin
     })
 
 }
 
+export const userUpdate = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const body = req.body;
+        console.log("id",id)
+        console.log("body",body)
 
+        const { phonenumber, name, email, age, gender, about, relationship, interest,
+            profileimage, latitude, longitude } = body;
+
+        console.log("Request body:", body);
+
+        if (!phonenumber || !name || !email || !age || !gender || !about ||!relationship || !interest || !profileimage || !latitude || !longitude) {
+            console.log("Missing fields:", {
+                phonenumber: !phonenumber,
+                name: !name,
+                email: !email,
+                age: !age,
+                gender: !gender,
+                about: !about,
+                looking_for: relationship,
+                interest: !interest,
+                profileimage: !profileimage,
+                imageone: !imageone,
+                imagetwo: !imagetwo,
+                imagethree: !imagethree,
+                imagefour: !imagefour,
+                imagefive: !imagefive,
+                latitude: !latitude,
+                longitude: !longitude
+            });
+            return res.status(400).json({ message: "Please fill all the fields" });
+        }
+
+        // validate email format
+        const emailRegex = /^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+         // check if email is already in use by another user
+        const existingUser = await usermodel.findOne({ where: { email } });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already in use" });
+        }
+
+        // Update user profile
+        const userUpdate = await usermodel.update(
+            { phonenumber, name, email, age, gender, about, relationship, interest, profileimage, imageone, imagetwo, imagethree, imagefour, imagefive, latitude, longitude },
+            { where: { id } }
+        );
+
+        if (userUpdate[0] === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const updatedUser = await usermodel.findOne({ where: { id } });
+
+        return res.status(200).json({
+            success: true,
+            message: "User updated successfully",
+            data: updatedUser
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            err: err.message
+        });
+    }
+}

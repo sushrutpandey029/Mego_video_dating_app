@@ -106,11 +106,11 @@
                   alt="User Image"
                 />
                 {{!-- <span class="d-none d-md-inline">Alexander Pierce</span> --}}
-                <span class="d-none d-md-inline">Hi, {{user.fullname}}</span>
+                <span class="d-none d-md-inline">Welcome, {{#if admin}}{{admin.fullname}}{{/if}}</span>
               </a>
 
               <div class="dropdown-menu w-25" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" href="#">Hi, {{user.fullname}}</a>
+                <a class="dropdown-item" href="#">Hi,{{#if admin}} {{admin.fullname}}{{/if}}</a>
                 <a class="dropdown-item" href="/showProfile">Profile</a>
                 <a class="dropdown-item" href="/logout">Logout</a>
               </div>

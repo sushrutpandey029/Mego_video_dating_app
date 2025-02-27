@@ -24,8 +24,10 @@ const sessionStore = new SequelizeStore({
   db: sequelize,
 });
 
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
+
 
 //set view engine to handlebars
 app.engine("html", hbs.__express);
@@ -54,6 +56,7 @@ app.use(flash());
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash("success");
   res.locals.error_msg = req.flash("error");
+  res.locals.admin = req.session.admin || null;
   next();
 });
 
