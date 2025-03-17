@@ -1,6 +1,7 @@
 import express from 'express'
 
-import {userregister, userlogin, userUpdate} from '../Controllers/Api_Controller.js'
+import {userregister, userlogin, updateuserprofile,getalluser,
+     updatelocation, getuserprofile,sendmesg,chatlist,messagehistory,createReport,addFavorite,getFavorites,removeFavorite} from '../Controllers/Api_Controller.js'
 
 import upload from '../Middlewares/ProfileUpload.js'
 
@@ -14,11 +15,38 @@ router.get('/',(req,res)=>{
     })
 })
 
-router.post('/insertuser', upload.single('profileimage'), userregister)
+router.post('/insertuser', upload.single('profileimage'), userregister);
 
 router.get('/userlogin', userlogin);
 
-router.post('/updateUser', userUpdate);
+router.put('/updateuserprofile/:id',upload.fields([
+    { name: 'profileimage', maxCount: 1 },
+    { name: 'Imageone', maxCount: 1 },
+    { name: 'Imagetwo', maxCount: 1 },
+    { name: 'Imagethree', maxCount: 1 },
+    { name: 'Imagefour', maxCount: 1 },
+    { name: 'Imagefive', maxCount: 1 }
 
+]),updateuserprofile);
+
+router.put('/updatelocation/:id',updatelocation);
+
+router.get('/getuserprofile/:id', getuserprofile);
+
+router.get('/getalluser', getalluser);
+
+router.post('/sendmesg', sendmesg);
+
+router.get('/chatlist/:sender_id/:receiver_id', chatlist);
+
+router.get('/messagehistory/:sender_id/:receiver_id', messagehistory);
+
+router.post('/report', createReport);
+
+router.post('/favorite', addFavorite);
+
+router.get('/favorites/:id', getFavorites);
+
+router.delete('/removefavorite', removeFavorite);
 
 export default router;

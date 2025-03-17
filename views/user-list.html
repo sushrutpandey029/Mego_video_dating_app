@@ -26,8 +26,12 @@
         <th>About</th>
         <th>Looking-For</th>
         <th>Interest</th>
-        <th>Edit</th>
+        <th>Status</th>
+        <th>Dcetive</th>
+        <th>ChatUser</th>
+        <th>Report</th>
         <th>Delete</th>
+       
       </tr>
     </thead>
     <tbody>
@@ -42,7 +46,10 @@
         <td>{{this.about}}</td>
         <td>{{this.looking_for}}</td>
         <td>{{this.interest}}</td>
-        <td><a href="/edit-user"><button type="button" class="btn btn-outline-primary mb-2">Edit</button></a></td>
+        <td><a href="/status"><button type="button" class="btn btn-outline-primary mb-2">Active</button></a></td>
+        <td><a href="/statusUpdate"><button type="button" class="btn btn-outline-primary mb-2">Dective</button></a></td>
+        <td><a href="/chatlist/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">chatuser</button></a></td>
+        <td><a href="/reports/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">Reports</button></a></td> 
         <td><button type="button" class="btn btn-outline-danger mb-2">Delete</button></td>
       </tr>
       {{/each}}

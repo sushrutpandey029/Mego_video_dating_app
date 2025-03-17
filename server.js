@@ -36,6 +36,8 @@ app.set("view engine", "html");
 app.set("views", path.join(__dirname, "views"));
 hbs.registerPartials(path.join(__dirname, "views", "Partial"));
 app.use(express.static(path.join(__dirname, "public", "assets")));
+app.use('/profile-images', express.static(path.join(__dirname, 'view', 'src', 'ProfileImage')));
+
 
 app.use(
   session({
@@ -43,7 +45,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
-    cookie: { maxAge: 60 * 60 * 1000 },
+    cookie: { maxAge: 60 * 60 * 60 * 1000 },
   })
 );
 

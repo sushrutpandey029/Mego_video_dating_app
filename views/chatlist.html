@@ -1,0 +1,45 @@
+
+
+{{>Header}}{{>sidebar}}
+
+<div class="container mt-4">
+  <!--begin::Row-->
+  <div class="row">
+    <div class="col-sm-6"><h3 class="mb-0">UsersChat</h3></div>
+    <div class="col-sm-6">
+      <ol class="breadcrumb float-sm-end">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">
+          ChatList
+        </li>
+      </ol>
+    </div>
+  </div>
+  <!--end::Row-->
+  <table id="userTable" class="display">
+    <thead>
+      <tr>
+        
+        <th>Receiver_id</th>
+        <th>ProfileImage</th>
+        <th>Name</th>
+        <th>PhoneNumber</th>
+        <th>ChatHistory</th>
+      </tr>
+    </thead>
+    <tbody>
+        {{#each userlist}}
+        
+      <tr>
+        <td>{{this.id}}</td>
+        <td><img src="/profile-images/{{this.profileimage}}" alt="{{this.name}}'s profile image" width="50" height="50"></td>
+        <td>{{this.name}}</td>
+        <td>{{this.phonenumber}}</td>
+        <td><a href="/messagehistory/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">chathistory</button></a></td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+{{>footer}}
