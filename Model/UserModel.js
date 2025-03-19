@@ -41,6 +41,30 @@ const usermodel = sequelize.define('mego_users', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    Imageone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+
+    Imagetwo: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+
+    Imagethree: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+
+    Imagefour: { 
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+
+    Imagefive: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     latitude: {
         type: DataTypes.STRING,
         allowNull: false,

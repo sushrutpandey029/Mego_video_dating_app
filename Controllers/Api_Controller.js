@@ -1,12 +1,14 @@
 import usermodel from '../Model/UserModel.js'
 import blockedmodel from '../Model/BlockedModel.js'
 import { Op } from 'sequelize';
+import { Sequelize } from 'sequelize';
 import path from 'path';
 import { error } from 'console';
 import messageModel from '../Model/messageModel.js'
 import exp from 'constants';
 import reportModel from '../Model/reportModel.js'
 import favoriteModel from '../Model/FavoriteModel.js'
+import interestedModel from '../Model/IntrestedModel.js';
 
 
 export const userregister = async (req, res) => {
@@ -381,7 +383,7 @@ function mergeChats(senderChat, receiverChat) {
     });
     return Array.from(latestChatMaps.values());
 }
-// export const chatlist = async (req, res) => {
+
 //     try {
 //         const { sender_id, receiver_id } = req.params;
 
@@ -665,13 +667,6 @@ export const messagehistory = async (req, res) => {
 };
 
 
-// export const blockuser = async (req,res) =>{
-
-//     const body = req.body
-
-//     const {blockedby, blockedto, status} = body
-
-// }
 
 
 
@@ -684,6 +679,18 @@ export const addFavorite = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
+            });
+        }
+      
+        // Check if the favorite relationship already exists
+        const existingFavorite = await favoriteModel.findOne({
+            where: { favoritedBy, favoritedTo }
+        });
+
+        if (existingFavorite) {
+            return res.status(400).json({
+                success: false,
+                message: " this Favorite user already exists"
             });
         }
 
@@ -707,32 +714,7 @@ export const addFavorite = async (req, res) => {
     }
 };
 
-//  export const getFavorites = async (req,res) => {
-//     try{
-//         const { id } = req.params;
-//         const favorites = await favoriteModel.findAll({
-//             where: { favoritedBy:id},
-//             include: [{
-//                 model: usermodel,
-//                 as : 'favoritedUser',
-//                 attributes: ['id', 'name', 'profileimage', 'phonenumber']
-//             }]
-//         });
 
-//         return res.status(200).json({
-//             success: true,
-//             message: "User Favorites",
-//             data: favorites
-//         });
-//     } catch (error){
-//         console.error("Error fetching favorites:", error);
-//         return res.status(500).json({
-//             success: false,
-//             message: "Internal Server Error",
-//             error: error.message
-//         });
-//     }
-//  }
 
 // export const getFavorites = async (req, res) => {
 //     try {
@@ -778,7 +760,7 @@ export const getFavorites = async (req, res) => {
             include: [{
                 model: usermodel,  // Join with the usermodel to get the details of the favorited user
                 as: 'favoritedToUser',  // Alias for the favorited user (not the user who favored)
-                attributes: ['id', 'name', 'profileimage', 'phonenumber', 'email', 'age', 'gender', 'about', 'looking_for', 'interest', 'latitude', 'longitude']  // Specify the fields you need from favorited user
+                attributes: ['id', 'name', 'profileimage',"Imageone",'Imagetwo', 'Imagethree', 'Imagefour', 'Imagefive','phonenumber', 'email', 'age', 'gender', 'about', 'looking_for', 'interest', 'latitude', 'longitude']  // Specify the fields you need from favorited user
             }]
         });
 
@@ -890,4 +872,288 @@ export const createReport = async (req, res) => {
             error: error.message
         });
     }
+};
+
+export const addInterest = async (req, res) => {
+    try{
+        const { interestedBy, interestedTo } = req.body;
+
+        if (!interestedBy || !interestedTo) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
+
+        // Check if the interest relationship already exists
+        const existingInterest = await interestedModel.findOne({
+            where: { interestedBy, interestedTo }
+        });
+
+        if (existingInterest) {
+            return res.status(400).json({
+                success: false,
+                message: " this Interest user already exists"
+            });
+        }
+
+        const newInterest = await interestedModel.create({
+            interestedBy,
+            interestedTo
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Interest added successfully",
+            data: newInterest
+        });
+    } catch (error) {
+        console.log("Error adding interest:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+        
+    }
+};
+
+
+//     try {
+//         const { id } = req.params;
+
+//         // Ensure the 'interestedUser' alias matches the one used in the association
+//         const interests = await interestedModel.findAll({
+//             where: { interestedBy: id }
+//         });
+
+//         console.log("Interestes", interests)
+
+    
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "User Favorites",
+//             data: interests
+//         })
+
+//     } catch (error) {
+//         console.error("Error fetching interests:", error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal Server Error",
+//             error: error.message
+//         });
+//     }
+// };
+
+
+
+
+export const getInterests = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch interests along with the associated user data for 'interestedTo'
+        const interests = await interestedModel.findAll({
+            where: { interestedBy: id },
+            include: [
+                {
+                    model: usermodel, // Reference the User model for the interestedTo (interestedTarget)
+                    as: 'interestedTarget', // Alias used for the association
+                    attributes: [
+                        'id', 'name', 'profileimage', 'Imageone', 'Imagetwo', 'Imagethree',
+                        'Imagefour', 'Imagefive', 'phonenumber', 'email', 'age', 'gender',
+                        'about', 'looking_for', 'interest', 'latitude', 'longitude'
+                    ]
+                }
+            ]
+        });
+
+        console.log("Interest records with interestedTarget data:", interests);
+
+        // Map the results to include both the 'interest' and 'interestedTarget' data
+        const interestDetails = interests.map(interest => ({
+            // interest: {
+            //     id: interest.id,
+
+            //     interestedBy: interest.interestedBy,
+            //     interestedTo: interest.interestedTo,
+            //     createdAt: interest.createdAt,
+            //     updatedAt: interest.updatedAt,
+            // },
+            interestedTarget: interest.interestedTarget // Add the interestedTo data (user data)
+        }));
+
+        return res.status(200).json({
+            success: true,
+            message: interestDetails.length ? "User interest" : "No interest Found",
+            data: interestDetails
+        });
+
+    } catch (error) {
+        console.error("Error fetching interests:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
+
+export const removeInterest = async (req, res) => {
+    try{
+        const { interestedBy, interestedTo} = req.body;
+
+         if(!interestedBy || !interestedTo) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            })
+         }
+          const interset = await interestedModel.findOne({
+                where: { interestedBy, interestedTo}
+          });
+          if (!interestedBy) {
+            return res.status(404).json({
+                success: false,
+                message: "Interest not found"
+            })   
+          }
+           await interset.destroy();
+            
+           return res.status(200).json({
+            success: true,
+            message: "Interest removed successfully",
+           })
+    }
+    catch (error) {
+         console.error("Error removing interest:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error",
+                error: error.message
+            });
+    }
+};
+
+export const getInterestsOnMe = async (req,res) => {
+    try{
+        const { id } = req.params;
+
+        const interests = await interestedModel.findAll({
+            where: {
+            interestedTo: id
+            //  status: 'pending'
+            },
+
+            include: [{
+                model: usermodel,
+                as: 'interestedUser',
+                attributes: [
+                    'id', 'name', 'profileimage', 'Imageone', 'Imagetwo', 'Imagethree',
+                    'Imagefour', 'Imagefive', 'phonenumber', 'email', 'age', 'gender',
+                    'about', 'looking_for', 'interest', 'latitude', 'longitude'
+                ]
+            }]
+        });
+
+        
+
+        const interestDetails = interests.map(interest => interest.interestdUser);
+
+        return res.status(200).json({
+            success: true,
+            message: interestDetails.length ? " Users interested in you" : "No users have shown interest in you", 
+            data: interests
+        });
+
+    } catch (error) {
+        console.error("Error fetching interests:",error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server Error",
+            error: error.message
+        });
+    }
+};
+
+export const rejectInterestOnMe = async (req, res) => {
+    try {
+        const { interestedBy, interestedTo } = req.body;
+
+        if (!interestedBy || !interestedTo) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
+
+        const interest = await interestedModel.findOne({
+            where: { interestedBy, interestedTo }
+        });
+
+        if (!interest) {
+            return res.status(404).json({
+                success: false,
+                message: "Interest not found"
+            });
+        }
+
+        await interest.destroy();
+
+        return res.status(200).json({
+            success: true,
+            message: "Interest rejected successfully"
+        });
+    } catch (error) {
+        console.error("Error removing interest:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
+export const  acceptInterestOnMe = async (req,res) => {
+    try{
+        const { interestedBy, interestedTo } = req.body;
+
+        if(!interestedBy || ! interestedTo ) {
+            return res.status(400).json({
+                success:false,
+                message: "All fields are required"
+            });
+        }
+
+        const interest = await interestedModel.findOne({
+            where: { interestedBy, interestedTo}
+        });
+
+        if (!interest) {
+            return res.status(404).json({
+                success:false,
+                message:"Interest not found"
+            });
+        }
+
+        interest.status = 'accepted';
+        await interest.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Interest accepted successfully",
+            data: interest
+        });
+    } catch (error) {
+        console.error("Error accepting successfully", error);
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error",
+            error: error.message
+        });
+    }
+
 };

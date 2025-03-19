@@ -1,7 +1,9 @@
 import express from 'express'
 
 import {userregister, userlogin, updateuserprofile,getalluser,
-     updatelocation, getuserprofile,sendmesg,chatlist,messagehistory,createReport,addFavorite,getFavorites,removeFavorite} from '../Controllers/Api_Controller.js'
+       updatelocation, getuserprofile,sendmesg,chatlist,messagehistory,createReport,
+       addFavorite,getFavorites,removeFavorite,addInterest,getInterests,
+       removeInterest,getInterestsOnMe,rejectInterestOnMe,acceptInterestOnMe} from '../Controllers/Api_Controller.js'
 
 import upload from '../Middlewares/ProfileUpload.js'
 
@@ -48,5 +50,17 @@ router.post('/favorite', addFavorite);
 router.get('/favorites/:id', getFavorites);
 
 router.delete('/removefavorite', removeFavorite);
+
+router.post('/interest', addInterest);
+
+router.get('/interests/:id', getInterests);
+
+router.delete('/removeinterest', removeInterest);
+
+router.get('/interestOnMe/:id', getInterestsOnMe);
+
+router.delete('/rejectinterestOnMe', rejectInterestOnMe );
+
+router.post('/acceptinterestOnMe', acceptInterestOnMe);
 
 export default router;

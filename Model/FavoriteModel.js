@@ -32,23 +32,3 @@ export default favoriteModel;
 
 
 
-
-// import { DataTypes } from "sequelize";
-// import sequelize from "../Database/MySql.js";
-
-// const favoriteModel = sequelize.define("favorite", {
-//     favoritedBy: {
-//         type: DataTypes.INTEGER,
-//         allowNull : false,
-//     },
-//     favoritedTo: {
-//         type: DataTypes.INTEGER,
-//         allowNull: false,
-//     }
-// },{
-//     tableName: 'user_favorite',
-//     timestamps: true,
-
-// });
-
-// export default favoriteModel;
