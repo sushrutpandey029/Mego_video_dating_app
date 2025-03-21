@@ -3,7 +3,7 @@ import express from 'express'
 import {userregister, userlogin, updateuserprofile,getalluser,
        updatelocation, getuserprofile,sendmesg,chatlist,messagehistory,createReport,
        addFavorite,getFavorites,removeFavorite,addInterest,getInterests,
-       removeInterest,getInterestsOnMe,rejectInterestOnMe,acceptInterestOnMe} from '../Controllers/Api_Controller.js'
+       removeInterest,getInterestsOnMe,rejectInterestOnMe,acceptInterestOnMe,myConnections,removeConnection} from '../Controllers/Api_Controller.js'
 
 import upload from '../Middlewares/ProfileUpload.js'
 
@@ -62,5 +62,7 @@ router.get('/interestOnMe/:id', getInterestsOnMe);
 router.delete('/rejectinterestOnMe', rejectInterestOnMe );
 
 router.post('/acceptinterestOnMe', acceptInterestOnMe);
+router.get('/myconnections/:id',myConnections);
+router.delete('/removeconnection',removeConnection)
 
 export default router;
