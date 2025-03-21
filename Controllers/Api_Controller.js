@@ -821,58 +821,7 @@ export const removeFavorite = async (req, res) => {
     }
 };
 
-export const createReport = async (req, res) => {
-    try {
-        const { reportedBy, reportedTo, reason } = req.body;
 
-        if (!reportedBy || !reportedTo || !reason) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required"
-            });
-        }
-
-        // Check if a report already exists
-        const existingReport = await reportModel.findOne({
-            where: { reportedBy, reportedTo }
-        });
-
-        if (existingReport) {
-            // Increment the reportsCount if the report already exists
-            existingReport.reportsCount += 1;
-            await existingReport.save();
-
-            return res.status(200).json({
-                success: true,
-                message: "Report updated successfully",
-                data: existingReport
-            });
-        } else {
-            // Create a new report if it doesn't exist
-            const newReport = await reportModel.create({
-                reportedBy,
-                reportedTo,
-                reason,
-                // reportsCount: 1 // Initialize reportsCount to 1
-            });
-
-            return res.status(200).json({
-                success: true,
-                message: "Report created successfully",
-                data: newReport
-            });
-
-            
-        }
-    } catch (error) {
-        console.error("Error creating report:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-            error: error.message
-        });
-    }
-};
 
 export const addInterest = async (req, res) => {
     try{
@@ -1156,4 +1105,64 @@ export const  acceptInterestOnMe = async (req,res) => {
         });
     }
 
+};
+
+
+
+
+export const createReport = async (req, res) => {
+    try {
+        const { reportedBy, reportedTo, reason } = req.body;
+
+        if (!reportedBy || !reportedTo || !reason) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
+
+        // Check if a report already exists
+        const existingReport = await reportModel.findOne({
+            where: { reportedBy, reportedTo }
+        });
+
+        if (existingReport) {
+            // Increment the reportsCount if the report already exists
+            existingReport.reportsCount += 1;
+            await existingReport.save();
+
+            // Remove the reported user from the reporting user's list
+            await removeReportedUserFromList(reportedBy, reportedTo);
+
+            return res.status(200).json({
+                success: true,
+                message: "Report updated successfully",
+                data: existingReport
+            });
+        } else {
+            // Create a new report if it doesn't exist
+            const newReport = await reportModel.create({
+                reportedBy,
+                reportedTo,
+                reason,
+                // reportsCount: 1 // Initialize reportsCount to 1
+            });
+
+            // Remove the reported user from the reporting user's list
+            await removeReportedUserFromList(reportedBy, reportedTo);
+
+            return res.status(200).json({
+                success: true,
+                message: "Report created successfully",
+                data: newReport
+            });
+        }
+    } catch (error) {
+        console.error("Error creating report:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
 };
