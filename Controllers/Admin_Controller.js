@@ -6,8 +6,8 @@ import usermodel from "../Model/UserModel.js";
 import Statusmodel from "../Model/StatusModel.js";
 import statusModel from "../Model/StatusModel.js";
 import messageModel from "../Model/messageModel.js";
-import reportModel  from "../Model/reportModel.js";
-import { Op} from "sequelize";
+import reportModel from "../Model/reportModel.js";
+import { Op } from "sequelize";
 import { response } from "express";
 
 dotenv.config();
@@ -136,9 +136,8 @@ export const renderDashboard = async (req, res) => {
       femaleUsers,
     };
 
-    
     // req.session.countUsers = countUsers;
-    console.log("session-data",req.session);
+    console.log("session-data", req.session);
 
     return res.render("dashboard", { user: req.session.admin, countUsers });
   } catch (err) {
@@ -293,304 +292,253 @@ export const passwordChange = async (req, res) => {
   res.render("changePassword", { user: req.session.admin });
 };
 
-export const renderTotalUser =async (req , res) => {
-  try{
+export const renderTotalUser = async (req, res) => {
+  try {
     const user = await usermodel.findAll();
-    console.log("total-user",user);
-    return res.render("user-list",{user});
-  }catch(err){
-    console.log(err)
+    console.log("total-user", user);
+    return res.render("user-list", { user });
+  } catch (err) {
+    console.log(err);
   }
-}
+};
 
-export const renderMaleUser =async (req , res) => {
-  try{
-    const user = await usermodel.findAll({where:{gender:"male"}});
-    console.log("male-user",user);
-    return res.render("user-list",{user});
-  }catch(err){
-    console.log(err)
+export const renderMaleUser = async (req, res) => {
+  try {
+    const user = await usermodel.findAll({ where: { gender: "male" } });
+    console.log("male-user", user);
+    return res.render("user-list", { user });
+  } catch (err) {
+    console.log(err);
   }
-}
+};
 
-export const renderFemaleUser =async (req , res) => {
-  try{
-    const user = await usermodel.findAll({where:{gender:"female"}});
+export const renderFemaleUser = async (req, res) => {
+  try {
+    const user = await usermodel.findAll({ where: { gender: "female" } });
 
-    return res.render("user-list",{user});
-  }catch(err){
-    console.log(err)
+    return res.render("user-list", { user });
+  } catch (err) {
+    console.log(err);
   }
-}
+};
 
-export const renderStatusUser = async (req,res) => {
-  try{
-     const { userId } = req.params;
-     const { status } = req.body;
+export const renderStatusUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
 
-     if(!['enable', 'disable'].includes(status)){
-       return res.status(400).json({
+    if (!["enable", "disable"].includes(status)) {
+      return res.status(400).json({
         success: false,
-        message : "Invalid status value"
-       });
-     }
+        message: "Invalid status value",
+      });
+    }
 
-     const user = await usermodel.findByPk(userId);
+    const user = await usermodel.findByPk(userId);
 
-     if (!user){
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message : "User not found"
+        message: "User not found",
       });
-     }
+    }
 
-      await statusModel.insert({userId , status});
-      return res.status(200).json({
-        success: true,
-        message: "User status updated successfully"
-      });
-
-  } catch (err){
+    await statusModel.insert({ userId, status });
+    return res.status(200).json({
+      success: true,
+      message: "User status updated successfully",
+    });
+  } catch (err) {
     console.error("Error updating user status:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err.message
-    })
+      error: err.message,
+    });
   }
 };
 
 // Get user status
 
-export const renderUserStatus = async (req,res) => {
-  try{
-     const { userId } = req.params;
+export const renderUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-     const status = await Statusmodel.findOne({ where: {userId}});
-     if(!status){
+    const status = await Statusmodel.findOne({ where: { userId } });
+    if (!status) {
       return res.status(404).json({
         success: false,
-        message: "User status not found"
+        message: "User status not found",
       });
-
-     }
-   return res.status(200).json({
+    }
+    return res.status(200).json({
       success: true,
-      data: status
-   });
-} catch (err) {
-  console.error("Error fetching user status:", err);
-  return res.status(500).json({
-    success: false,
-    message: "Internasl server error",
-    error: err.message
-  });
-}
-}
+      data: status,
+    });
+  } catch (err) {
+    console.error("Error fetching user status:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internasl server error",
+      error: err.message,
+    });
+  }
+};
 
-export const renderUpdateStatus = async (req,res) => {
-   try{
-     const { userId } = req.params;
-     const { status } = req.body;
+export const renderUpdateStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
 
-      if(!['enable', 'disable']. includes(status)){
-         return res.status(400).json({
-           success: false,
-           message: "Invalid status value"
-         })
-
-      } 
-      const user = await usermodel.findByPk(userId);
-       if(!user){
-          return res.status(404).json({
-            success: false,
-            message: "User not found"
-          })
-       }
-       await statusModel.update({status}, {where: {userId}});
-        return res.status(200).json({
-          success: true,
-          message: "User status updated successfully"
-        })
-   } catch (err) {
+    if (!["enable", "disable"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value",
+      });
+    }
+    const user = await usermodel.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    await statusModel.update({ status }, { where: { userId } });
+    return res.status(200).json({
+      success: true,
+      message: "User status updated successfully",
+    });
+  } catch (err) {
     console.error("Error updating user status:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err.message
-    })
+      error: err.message,
+    });
   }
-} 
-
+};
 
 export const renderAdminChatList = async (req, res) => {
   try {
-      const { sender_id } = req.params;
+    const { sender_id } = req.params;
 
-      // Fetch chat data with latest messages first
-      const chatdata = await messageModel.findAll({
-          where: { sender_id },
-          attributes: ["receiver_id", "message", "createdAt"],
-          order: [["createdAt", "DESC"]] // Order by latest messages first
+    // Fetch chat data with latest messages first
+    const chatdata = await messageModel.findAll({
+      where: { sender_id },
+      attributes: ["receiver_id", "message", "createdAt"],
+      order: [["createdAt", "DESC"]], // Order by latest messages first
+    });
+
+    console.log("chatdata", chatdata);
+
+    if (!chatdata.length) {
+      return res.status(401).json({
+        success: false,
+        message: "User Chat list is Empty",
+        data: null,
       });
-
-      console.log("chatdata", chatdata);
-
-      if (!chatdata.length) {
-          return res.status(401).json({
-              success: false,
-              message: "User Chat list is Empty",
-              data: null
-          });
-      }
-      // Remove duplicates, keeping only the latest message per receiver
-      const uniqueChatData = [];
-      const seenReceivers = new Set();
-
-      for (const chat of chatdata) {
-          if (!seenReceivers.has(chat.receiver_id)) {
-              seenReceivers.add(chat.receiver_id);
-              uniqueChatData.push(chat);
-          }
-      }
-
-      // Extract unique receiver IDs
-      const receiverIds = uniqueChatData.map(chat => chat.receiver_id);
-
-      console.log("receiverIds", receiverIds);
-
-      // Fetch user details for all receiver IDs
-      const userdata = await usermodel.findAll({
-          where: { id: { [Op.in]: receiverIds } },
-          attributes: ["id","name", "profileimage", "phonenumber"]
-      });
-
-      console.log("userdata", userdata);
-
-      return res.render("chatlist", {
-          userlist: userdata,
-          chatdata: uniqueChatData
-        });
-      } catch (error) {
-          console.error("Error fetching chat list:", error);
-          return res.status(500).json({
-              success: false,
-              message: "Internal Server Error",
-              error: error.message
-          });
-      }
-  };
-
-  export const renderAdminChatHistory = async (req, res) => {
-    try {
-        const { sender_id, receiver_id } = req.params;
-
-        // Fetch chat history between sender and receiver
-        const chatHistory = await messageModel.findAll({
-            where: {
-                [Op.or]: [
-                    { sender_id, receiver_id },
-                    { sender_id: receiver_id, receiver_id: sender_id }
-                ]
-            },
-            attributes: ["sender_id", "receiver_id", "message", "createdAt"],
-            order: [["createdAt", "ASC"]] // Order by oldest messages first
-        });
-
-        console.log("chatHistory", chatHistory);
-
-        if (!chatHistory.length) {
-            return res.status(401).json({
-                success: false,
-                message: "Chat history is empty",
-                data: null
-            });
-        }
-
-        return res.render("chatHistory", { 
-          chatHistory: chatHistory
-        });
-    } catch (error) {
-        console.error("Error fetching chat history:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-            error: error.message
-        });
     }
+    // Remove duplicates, keeping only the latest message per receiver
+    const uniqueChatData = [];
+    const seenReceivers = new Set();
+
+    for (const chat of chatdata) {
+      if (!seenReceivers.has(chat.receiver_id)) {
+        seenReceivers.add(chat.receiver_id);
+        uniqueChatData.push(chat);
+      }
+    }
+
+    // Extract unique receiver IDs
+    const receiverIds = uniqueChatData.map((chat) => chat.receiver_id);
+
+    console.log("receiverIds", receiverIds);
+
+    // Fetch user details for all receiver IDs
+    const userdata = await usermodel.findAll({
+      where: { id: { [Op.in]: receiverIds } },
+      attributes: ["id", "name", "profileimage", "phonenumber"],
+    });
+
+    console.log("userdata", userdata);
+
+    return res.render("chatlist", {
+      userlist: userdata,
+      chatdata: uniqueChatData,
+    });
+  } catch (error) {
+    console.error("Error fetching chat list:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
 };
 
+export const renderAdminChatHistory = async (req, res) => {
+  try {
+    const { sender_id, receiver_id } = req.params;
+
+    // Fetch chat history between sender and receiver
+    const chatHistory = await messageModel.findAll({
+      where: {
+        [Op.or]: [
+          { sender_id, receiver_id },
+          { sender_id: receiver_id, receiver_id: sender_id },
+        ],
+      },
+      attributes: ["sender_id", "receiver_id", "message", "createdAt"],
+      order: [["createdAt", "ASC"]], // Order by oldest messages first
+    });
+
+    console.log("chatHistory", chatHistory);
+
+    if (!chatHistory.length) {
+      return res.status(401).json({
+        success: false,
+        message: "Chat history is empty",
+        data: null,
+      });
+    }
+
+    return res.render("chatHistory", {
+      chatHistory: chatHistory,
+    });
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
 
 export const getReports = async (req, res) => {
-
-  try{
-
+  try {
     const { id } = req.params;
 
     const reports = await reportModel.findAll({
       where: { reportedTo: id },
-      attributes: ["reportedBy","reportedTo","reason","status"]
+      attributes: ["reportedBy", "reportedTo", "reason", "status"],
     });
-
-    // const countdata = await reportModel.findAll({
-    //   where: { reportedTo: id },
-    //   attributes: ["reportedTo"]
-    // });
 
     const reportCount = reports.length;
 
     console.log("reports", reports);
 
-     return res.render("reportList", {
+    return res.render("reportList", {
       reports: reports,
-      reportCount:reportCount
-     });
-
-
+      reportCount: reportCount,
+    });
   } catch (error) {
-
     console.log("Error fetching reports:", error);
 
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
-
-    
+      error: error.message,
+    });
   }
 };
-
-
-
-// export const getReports = async (req, res) => {
-//   try{
-//     const { id } = req.params;
-
-//     // Fetch all reports for the specified user
-//     const reports = await reportModel.findAll({
-//       where: { reportedTo: id },
-//       attributes: ["reportedTo"]
-//     });
-
-//      // Count the number of reports
-//      const reportCount = reports.length;
-
-//     //  console.log("reports length", reports);
-
-//      console.log("reportCount", reportCount);
-
-//      return res.render("reportList", {reportCount});
-
-//   } catch (error) {
-//     console.log("Error fetching reports:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message
-//     })
-    
-//   }
-// };
-
-
