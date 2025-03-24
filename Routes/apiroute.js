@@ -43,8 +43,6 @@ router.get('/chatlist/:sender_id/:receiver_id', chatlist);
 
 router.get('/messagehistory/:sender_id/:receiver_id', messagehistory);
 
-router.post('/report', createReport);
-
 router.post('/favorite', addFavorite);
 
 router.get('/favorites/:id', getFavorites);
@@ -62,7 +60,12 @@ router.get('/interestOnMe/:id', getInterestsOnMe);
 router.delete('/rejectinterestOnMe', rejectInterestOnMe );
 
 router.post('/acceptinterestOnMe', acceptInterestOnMe);
+
 router.get('/myconnections/:id',myConnections);
-router.delete('/removeconnection',removeConnection)
+
+router.delete('/removeconnection',removeConnection);
+
+router.post('/report', createReport);
+
 
 export default router;

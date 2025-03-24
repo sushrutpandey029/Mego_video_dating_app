@@ -1,13 +1,13 @@
 
 import { DataTypes } from "sequelize";
-import sequelize  from "../Database/MySql.js";
+import sequelize from "../Database/MySql.js";
 
 const reportModel = sequelize.define('user_report', {
 
     reportedBy: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        
+
     },
     reportedTo: {
         type: DataTypes.INTEGER,
@@ -17,18 +17,18 @@ const reportModel = sequelize.define('user_report', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    status:{
+    status: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'active'
+        defaultValue: 'blocked'
     },
-    reportsCount:{
+    reportsCount: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 1
     }
 
-}, { 
+}, {
     tableName: 'user_report',
     timestamps: true,
 
