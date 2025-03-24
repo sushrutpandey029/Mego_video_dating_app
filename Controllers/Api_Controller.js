@@ -320,22 +320,50 @@ export const getuserprofile = async (req, res) => {
 };
 
 export const getalluser = async (req, res) => {
-    try {
-        const user = await usermodel.findAll();
+  try {
+    const { id } = req.params;
 
-        return res.status(200).json({
-            success: true,
-            message: "Users",
-            data: user,
-        });
-    } catch (err) {
-        console.error("Error geting user profile:", err);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server error",
-            error: err.message,
-        });
-    }
+    const blockedUsers = await reportModel.findAll({
+      where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+      attributes: ["reportedBy", "reportedTo"],
+    });
+
+    const disabledUsers = await reportModel.findAll({
+      where: { status: "disabled" },
+      attributes: ["reportedTo"],
+    });
+
+    const blockedUsersIds = blockedUsers.flatMap((user) => [
+      user.reportedTo,
+      user.reportedBy,
+    ]);
+    const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
+
+    const excludeUserIds = [
+      ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
+    ];
+
+    const users = await usermodel.findAll({
+      where: {
+        id: {
+          [Op.notIn]: excludeUserIds,
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Users",
+      data: users,
+    });
+  } catch (err) {
+    console.error("Error geting user profile:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server error",
+      error: err.message,
+    });
+  }
 };
 
 export const sendmesg = async (req, res) => {
@@ -663,40 +691,96 @@ export const removeFavorite = async (req, res) => {
     }
 };
 
-// export const createReport = async (req, res) => {
-//   try {
-//     const { reportedBy, reportedTo, reason } = req.body;
+async function blockUser(reportedBy, reportedTo) {
+  try {
+    await interestedModel.destroy({
+      where: {
+        [Op.or]: [
+          { interestedBy: reportedBy, interestedTo: reportedTo },
+          { interestedBy: reportedTo, interestedTo: reportedBy },
+        ],
+      },
+    });
 
-//     if (!reportedBy || !reportedTo || !reason) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "All fields are required",
-//       });
-//     }
+    await favoriteModel.destroy({
+      where: {
+        [Op.or]: [
+          { favoritedBy: reportedBy, favoritedTo: reportedTo },
+          { favoritedBy: reportedTo, favoritedTo: reportedBy },
+        ],
+      },
+    });
 
-//     // Check if a report already exists
-//     const existingReport = await reportModel.findOne({
-//       where: { reportedBy, reportedTo },
-//     });
+    console.log("successfully removed from connection list and favorite list.");
+  } catch (error) {
+    console.error("Error in blockUser function:", error);
+  }
+}
 
-//     if (existingReport) {
-//       // Increment the reportsCount if the report already exists
-//       existingReport.reportsCount += 1;
-//       await existingReport.save();
+export const createReport = async (req, res) => {
+  try {
+    const { reportedBy, reportedTo, reason } = req.body;
 
-//       return res.status(200).json({
-//         success: true,
-//         message: "Report updated successfully",
-//         data: existingReport,
-//       });
-//     } else {
-//       // Create a new report if it doesn't exist
-//       const newReport = await reportModel.create({
-//         reportedBy,
-//         reportedTo,
-//         reason,
-//         // reportsCount: 1 // Initialize reportsCount to 1
-//       });
+    if (!reportedBy || !reportedTo || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    const alreadyReported = await reportModel.findOne({
+      where: {
+        [Op.and]: [{ reportedBy: reportedBy }, { reportedTo: reportedTo }],
+      },
+    });
+
+    if (alreadyReported) {
+      return res.status(400).json({
+        success: false,
+        message: "cannot report more than one time.",
+        data: [],
+      });
+    }
+
+    // Check if a report already exists
+    const existingReport = await reportModel.findOne({
+      where: { reportedTo },
+      order: [["createdAt", "DESC"]],
+    });
+
+    // console.log("countss", existingReport.reportsCount + 1);
+
+    if (existingReport) {
+      const newReport = await reportModel.create({
+        reportedBy: reportedBy,
+        reportedTo: reportedTo,
+        reason: reason,
+        reportsCount: existingReport.reportsCount + 1,
+      });
+
+      console.log("id", existingReport.id);
+
+      if (existingReport.reportsCount + 1 >= 3) {
+        await reportModel.update(
+          { status: "disabled" },
+          { where: { reportedBy, reportedTo } }
+        );
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Report updated successfully",
+        data: newReport,
+      });
+    } else {
+      // Create a new report if it doesn't exist
+      blockUser(reportedBy, reportedTo);
+
+      const newReport = await reportModel.create({
+        reportedBy,
+        reportedTo,
+        reason,
+      });
 
 //       return res.status(200).json({
 //         success: true,
@@ -1170,28 +1254,28 @@ export const removeConnection = async (req, res) => {
         const id = existedUsers[0]?.dataValues.id;
         console.log("firstId", id);
 
-        const data = await interestedModel.destroy({
-            where: {
-                id: id
-            }
-        })
+    const data = await interestedModel.destroy({
+      where: {
+        id: id,
+      },
+    });
 
         // Get all IDs where this user is either interestedBy or interestedTo
         // let connectedUserIds = [];
 
-        return res.status(200).json({
-            success: true,
-            message: "user deleted successfully.",
-            data
-        });
-    } catch (error) {
-        console.error("Error fetching interests:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server Error",
-            error: error.message,
-        });
-    }
+    return res.status(200).json({
+      success: true,
+      message: "user deleted successfully.",
+      data,
+    });
+  } catch (error) {
+    console.error("Error fetching interests:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server Error",
+      error: error.message,
+    });
+  }
 };
 
 
