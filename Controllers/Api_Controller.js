@@ -39,6 +39,7 @@ export const userregister = async (req, res) => {
         // }
 
         // Check for duplicate email
+
         const isDuplicatephone = await usermodel.findOne({ where: { phonenumber } });
 
         if (isDuplicatephone) {
@@ -321,6 +322,10 @@ export const getalluser = async (req, res) => {
         })
     }
 };
+
+
+
+
 
 export const sendmesg = async (req, res) => {
     try {
