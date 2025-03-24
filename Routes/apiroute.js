@@ -35,7 +35,7 @@ router.put('/updatelocation/:id',updatelocation);
 
 router.get('/getuserprofile/:id', getuserprofile);
 
-router.get('/getalluser', getalluser);
+router.get('/getalluser/:id', getalluser);
 
 router.post('/sendmesg', sendmesg);
 
