@@ -20,12 +20,12 @@ const reportModel = sequelize.define('user_report', {
     status:{
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'active'
+        defaultValue: 'blocked'
     },
     reportsCount:{
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 1
     }
 
 }, { 
