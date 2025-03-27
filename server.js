@@ -12,6 +12,8 @@ import path from "path";
 import connectSessionSequelize from "connect-session-sequelize";
 import flash from "connect-flash";
 
+
+
 const SequelizeStore = connectSessionSequelize(session.Store);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

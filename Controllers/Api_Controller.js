@@ -25,6 +25,7 @@ export const userregister = async (req, res) => {
       interest,
       latitude,
       longitude,
+      fcm_user_id
     } = body;
 
     let profileimage = null;
@@ -41,7 +42,8 @@ export const userregister = async (req, res) => {
       !interest ||
       !relationship ||
       !latitude ||
-      !longitude
+      !longitude ||
+      !fcm_user_id
     ) {
       return res.status(401).json({
         success: false,
@@ -113,6 +115,7 @@ export const userregister = async (req, res) => {
       profileimage,
       latitude,
       longitude,
+      fcm_user_id
     });
 
     console.log("new data", data);
@@ -247,6 +250,7 @@ export const updateuserprofile = async (req, res) => {
     });
   }
 };
+
 export const updatelocation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -365,10 +369,6 @@ export const getalluser = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 export const sendmesg = async (req, res) => {
   try {
@@ -1280,3 +1280,46 @@ export const removeConnection = async (req, res) => {
     });
   }
 };
+
+// export const updatefirebaseuuid = async (req, res) => {
+//     try {
+//       const { id } = req.params;
+  
+//       const {fcm_user_id} = req.body;
+  
+//       console.log("Received request body:", req.body);
+//       console.log("Uploaded files:", req.files);
+  
+//       if (!latitude) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "All fields are required",
+//         });
+//       }
+  
+//       const user = await usermodel.findByPk(id);
+//       if (!user) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "user not found",
+//         });
+//       }
+  
+//       await user.update({
+//         fcm_user_id,
+//       });
+  
+//       return res.status(200).json({
+//         success: true,
+//         message: "fuuid Updated Successfully",
+//         data: user,
+//       });
+//     } catch (err) {
+//       console.error("Error updating user fuuid:", err);
+//       return res.status(500).json({
+//         success: false,
+//         message: "Internal server error",
+//         error: err.message,
+//       });
+//     }
+//   };

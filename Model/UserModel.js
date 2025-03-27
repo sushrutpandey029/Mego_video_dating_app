@@ -41,6 +41,7 @@ const usermodel = sequelize.define('mego_users', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
     Imageone: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -72,6 +73,11 @@ const usermodel = sequelize.define('mego_users', {
     longitude: { 
         type: DataTypes.STRING,
         allowNull: false, 
+    },
+    fcm_user_id:{ 
+        type: DataTypes.STRING,
+        allowNull: false, 
+        defaultValue:null
     },
 }, {
     tableName: 'mego_users',

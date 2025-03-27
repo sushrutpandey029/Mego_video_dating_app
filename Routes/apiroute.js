@@ -7,6 +7,8 @@ import {userregister, userlogin, updateuserprofile,getalluser,
 
 import upload from '../Middlewares/ProfileUpload.js'
 
+import {generateAgoraToken} from '../Controllers/agoraToken.js'
+
 
 const router = express.Router();
 
@@ -63,6 +65,12 @@ router.delete('/rejectinterestOnMe', rejectInterestOnMe );
 
 router.post('/acceptinterestOnMe', acceptInterestOnMe);
 router.get('/myconnections/:id',myConnections);
-router.delete('/removeconnection',removeConnection)
+router.delete('/removeconnection',removeConnection);
+
+router.post("/generate-token", generateAgoraToken);
+
+// router.put("/generate-f_uuid/:id", updatefirebaseuuid);
+
+
 
 export default router;
