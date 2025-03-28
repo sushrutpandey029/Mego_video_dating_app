@@ -319,52 +319,52 @@ export const getuserprofile = async (req, res) => {
     }
 };
 
-export const getalluser = async (req, res) => {
-  try {
-    const { id } = req.params;
+// export const getalluser = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    const blockedUsers = await reportModel.findAll({
-      where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
-      attributes: ["reportedBy", "reportedTo"],
-    });
+//     const blockedUsers = await reportModel.findAll({
+//       where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+//       attributes: ["reportedBy", "reportedTo"],
+//     });
 
-    const disabledUsers = await reportModel.findAll({
-      where: { status: "disabled" },
-      attributes: ["reportedTo"],
-    });
+//     const disabledUsers = await reportModel.findAll({
+//       where: { status: "disabled" },
+//       attributes: ["reportedTo"],
+//     });
 
-    const blockedUsersIds = blockedUsers.flatMap((user) => [
-      user.reportedTo,
-      user.reportedBy,
-    ]);
-    const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
+//     const blockedUsersIds = blockedUsers.flatMap((user) => [
+//       user.reportedTo,
+//       user.reportedBy,
+//     ]);
+//     const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
 
-    const excludeUserIds = [
-      ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
-    ];
+//     const excludeUserIds = [
+//       ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
+//     ];
 
-    const users = await usermodel.findAll({
-      where: {
-        id: {
-          [Op.notIn]: excludeUserIds,
-        },
-      },
-    });
+//     const users = await usermodel.findAll({
+//       where: {
+//         id: {
+//           [Op.notIn]: excludeUserIds,
+//         },
+//       },
+//     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Users",
-      data: users,
-    });
-  } catch (err) {
-    console.error("Error geting user profile:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server error",
-      error: err.message,
-    });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       message: "Users",
+//       data: users,
+//     });
+//   } catch (err) {
+//     console.error("Error geting user profile:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server error",
+//       error: err.message,
+//     });
+//   }
+// };
 
 export const sendmesg = async (req, res) => {
     try {
@@ -718,85 +718,87 @@ async function blockUser(reportedBy, reportedTo) {
 }
 
 export const createReport = async (req, res) => {
-  try {
-    const { reportedBy, reportedTo, reason } = req.body;
-
-    if (!reportedBy || !reportedTo || !reason) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
-    }
-
-    const alreadyReported = await reportModel.findOne({
-      where: {
-        [Op.and]: [{ reportedBy: reportedBy }, { reportedTo: reportedTo }],
-      },
-    });
-
-    if (alreadyReported) {
-      return res.status(400).json({
-        success: false,
-        message: "cannot report more than one time.",
-        data: [],
-      });
-    }
-
-    // Check if a report already exists
-    const existingReport = await reportModel.findOne({
-      where: { reportedTo },
-      order: [["createdAt", "DESC"]],
-    });
-
-    // console.log("countss", existingReport.reportsCount + 1);
-
-    if (existingReport) {
-      const newReport = await reportModel.create({
-        reportedBy: reportedBy,
-        reportedTo: reportedTo,
-        reason: reason,
-        reportsCount: existingReport.reportsCount + 1,
-      });
-
-      console.log("id", existingReport.id);
-
-      if (existingReport.reportsCount + 1 >= 3) {
-        await reportModel.update(
-          { status: "disabled" },
-          { where: { reportedBy, reportedTo } }
-        );
+    try {
+      const { reportedBy, reportedTo, reason } = req.body;
+  
+      if (!reportedBy || !reportedTo || !reason) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
       }
-
-      return res.status(200).json({
-        success: true,
-        message: "Report updated successfully",
-        data: newReport,
+  
+      const alreadyReported = await reportModel.findOne({
+        where: {
+          [Op.and]: [{ reportedBy: reportedBy }, { reportedTo: reportedTo }],
+        },
       });
-    } else {
-      // Create a new report if it doesn't exist
-      blockUser(reportedBy, reportedTo);
-
-      const newReport = await reportModel.create({
-        reportedBy,
-        reportedTo,
-        reason,
+  
+      if (alreadyReported) {
+        return res.status(400).json({
+          success: false,
+          message: "cannot report more than one time.",
+          data: [],
+        });
+      }
+  
+      // Check if a report already exists
+      const existingReport = await reportModel.findOne({
+        where: { reportedTo },
+        order: [["createdAt", "DESC"]],
       });
+  
+      // console.log("countss", existingReport.reportsCount + 1);
+  
+      if (existingReport) {
+        const newReport = await reportModel.create({
+          reportedBy: reportedBy,
+          reportedTo: reportedTo,
+          reason: reason,
+          reportsCount: existingReport.reportsCount + 1,
+        });
+  
+        console.log("id", existingReport.id);
+  
+        if (existingReport.reportsCount + 1 >= 3) {
+          await reportModel.update(
+            { status: "disabled" },
+            { where: { reportedBy, reportedTo } }
+          );
+        }
+  
+        return res.status(200).json({
+          success: true,
+          message: "Report updated successfully",
+          data: newReport,
+        });
+      } else {
+        // Create a new report if it doesn't exist
+        blockUser(reportedBy, reportedTo);
+  
+        const newReport = await reportModel.create({
+          reportedBy,
+          reportedTo,
+          reason,
+        });
+  
+        return res.status(200).json({
+          success: true,
+          message: "Report created successfully",
+          data: newReport,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating report:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
+  };
+  
 
-//       return res.status(200).json({
-//         success: true,
-//         message: "Report created successfully",
-//         data: newReport,
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error creating report:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const addInterest = async (req, res) => {
     try {
@@ -1279,76 +1281,101 @@ export const removeConnection = async (req, res) => {
 };
 
 
-
-
-
-
-
-// export const removeReportedUserFromList = async (reportedBy, reportedTo) => {
-//     try{
-
-//         await userListModel.destroy({
-//             where: {
-//                 userId: reportedBy,
-//                 listedUserId: reportedTo
-//             }
-//         });
-
-//         console.error("Error removing reported userfrom list:", error);
-
-//     }catch(err){
-
-
-//     }
-
-// };
-
-export const createReport = async (req, res) => {
+export const getalluser = async (req, res) => {
     try {
-        const { reportedBy, reportedTo, reason } = req.body;
+      const { id } = req.params;
+  
+      // Extract filters from the request body or query
+      const { gender, minAge, maxAge, latitude, longitude, maxDistance, maxCount } = req.body;
+  
+      // Get blocked users
+      const blockedUsers = await reportModel.findAll({
+        where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+        attributes: ["reportedBy", "reportedTo"],
+      });
+  
+      // Get disabled users >>>>
+      const disabledUsers = await reportModel.findAll({
+        where: { status: "disabled" },
+        attributes: ["reportedTo"],
+      });
+  
+      const blockedUsersIds = blockedUsers.flatMap((user) => [user.reportedTo, user.reportedBy]);
+      const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
+  
+      const excludeUserIds = [
+        ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
+      ];
 
-        if (!reportedBy || !reportedTo || !reason) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required"
-            });
+      console.log('Excluded User ID:', excludeUserIds);
+  
+      // Build where conditions dynamically
+      let whereConditions = {
+        id: {
+          [Op.notIn]: excludeUserIds,
+        },
+      };
+  
+      if (gender) {
+        whereConditions.gender = gender; // Filter by gender (male or female)
+      }
+  
+      if (minAge || maxAge) {
+        const currentDate = new Date();
+        const ageFilter = [];
+        
+        if (minAge) {
+          ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
+            [Op.gte]: minAge * 365 // Approximate age by days
+          }));
         }
+        if (maxAge) {
+          ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
+            [Op.lte]: maxAge * 365 // Approximate age by days
+          }));
+        }
+  
+        if (ageFilter.length) {
+          whereConditions[Op.and] = ageFilter;
+        }
+      }
+  
+      if (latitude && longitude && maxDistance) {
+        whereConditions[Op.and] = whereConditions[Op.and] || [];
+  
+        // Add distance calculation condition (using geolib's getDistance function or a similar method)
+        whereConditions[Op.and].push(Sequelize.where(
+          Sequelize.fn('ST_DistanceSphere',
+            Sequelize.col('location'), // Assuming 'location' column stores the lat/lng as a POINT
+            Sequelize.fn('ST_GeomFromText', `POINT(${longitude} ${latitude})`)
+          ),
+          { [Op.lte]: maxDistance * 1000 } // Convert distance to meters (geolib returns meters)
+        ));
+      }
+  
+      // Fetch users with the applied filters
+      const users = await usermodel.findAll({
+        where: whereConditions,
+        limit: maxCount || 100, // Default to 100 if maxCount is not provided
+      });
+  
+      return res.status(200).json({
+        success: true,
+        message: "Users fetched successfully",
+        data: users,
+      });
 
-        // const existingReport = await reportModel.findOne({
-        //     where: { reportedTo }
-        // });
-
-        // console.log("exiting report", existingReport);
-
-
-        // if (existingReport) {
-        //     existingReport.reportsCount += 1;
-        //     await existingReport.save();
-
-        //     // await usermodel.update( { where: { id: reportedTo } });
-
-        //     // await removeReportedUserFromList(reportedBy, reportedTo);
-
-        //     return res.status(200).json({
-        //         success: true,
-        //         message: "Report created successfully",
-        //         data: newReport
-        //     });
-        // }
-
-        const report = new reportModel({
-            reportedBy: reportedBy, reportedTo: reportedTo, reason: reason,
-        })
-
-    } catch (error) {
-        console.error("Error creating report:", error);
-        return res.status(200).json({
-            success: true,
-            message: "Report  created successfully",
-            data: newReport
-        });
+    } catch (err) {
+      console.error("Error getting user profile:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server error",
+        error: err.message,
+      });
 
     }
+  };
 
-}
+
+
 

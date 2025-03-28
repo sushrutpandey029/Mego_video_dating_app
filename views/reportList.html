@@ -5,12 +5,12 @@
 <div class="container mt-4">
   <!--begin::Row-->
   <div class="row">
-    <div class="col-sm-6"><h3 class="mb-0">UsersChat</h3></div>
+    <div class="col-sm-6"><h3 class="mb-0">UserReport</h3></div>
     <div class="col-sm-6">
       <ol class="breadcrumb float-sm-end">
         <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
         <li class="breadcrumb-item active" aria-current="page">
-          ChatList
+          Report_Count
         </li>
       </ol>
     </div>
@@ -20,12 +20,12 @@
     <thead>
       <tr>
         <th>id</th>
-        <th>Reported By</th>
-        <th>Reported To</th>
+        <th>Reported_By</th>
+        <th>Reported_To</th>
         <th>Reason</th>
         <th>Status</th>
-        <th>create date</th>
-        <th>count report {{this.reportCount}}</th>
+        <th>Count_Report</th>
+        <th>Created_Date</th>
      
        
       </tr>
@@ -40,8 +40,8 @@
         <td>{{this.reportedTo}}</td>
         <td>{{this.reason}}</td>
         <td>{{this.status}}</td>
+        <td>{{this.reportsCount}}</td>
         <td>{{this.createdAt}}</td>
-        <td> </td>
         <!-- <td><a href="/report/{{this.id }}"><button type="button" class="btn btn-outline-primary mb-2">Report</button></a></td> -->
       </tr>
       {{/each}}
