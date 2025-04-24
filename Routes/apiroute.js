@@ -9,7 +9,6 @@ import upload from '../Middlewares/ProfileUpload.js'
 
 import {generateAgoraToken} from '../Controllers/agoraToken.js'
 
-
 const router = express.Router();
 
 router.get('/',(req,res)=>{

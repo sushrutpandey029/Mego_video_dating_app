@@ -630,6 +630,7 @@ export const getFavorites = async (req, res) => {
             "interest",
             "latitude",
             "longitude",
+            "fcm_user_id"
           ], // Specify the fields you need from favorited user
         },
       ],
@@ -857,7 +858,7 @@ export const getInterests = async (req, res) => {
 
     // Fetch interests along with the associated user data for 'interestedTo'
     const interests = await interestedModel.findAll({
-      where: { interestedBy: id },
+      where: { interestedBy: id, status: "panding" },
       include: [
         {
           model: usermodel, // Reference the User model for the interestedTo (interestedTarget)
@@ -880,6 +881,7 @@ export const getInterests = async (req, res) => {
             "interest",
             "latitude",
             "longitude",
+            "fcm_user_id"
           ],
         },
       ],
@@ -973,6 +975,7 @@ export const getInterestsOnMe = async (req, res) => {
             "interest",
             "latitude",
             "longitude",
+            "fcm_user_id"
           ],
         },
       ],
@@ -1211,6 +1214,7 @@ export const myConnections = async (req, res) => {
         "interest",
         "latitude",
         "longitude",
+        "fcm_user_id"
       ],
     });
 

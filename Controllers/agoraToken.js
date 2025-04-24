@@ -34,8 +34,9 @@ export const generateAgoraToken = (req, res) => {
       role,
       privilegeExpireTimestamp
     );
-
+    
     res.json({ token, uid });
+
   } catch (error) {
     console.error("Error generating token:", error);
     res.status(500).json({ error: "Failed to generate token", details: error.message });
