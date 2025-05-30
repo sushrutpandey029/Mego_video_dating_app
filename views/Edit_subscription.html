@@ -1,0 +1,22 @@
+<!-- filepath: C:\Users\sagar\OneDrive\w\Mego\Mego_video_dating_app\views\editSubscription.hbs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Subscription</title>
+</head>
+<body>
+  <h1>Edit Subscription</h1>
+ <form action="/update-subscription/{{subscription.id}}" method="POST">
+    <label>Plan Name:</label>
+    <input type="text" name="planName" value="{{subscription.planName}}" required><br>
+    <label>Amount:</label>
+    <input type="number" name="amount" value="{{subscription.amount}}" required><br>
+    <label>Plan Type:</label>
+    <input type="text" name="planType" value="{{subscription.planType}}" required><br>
+    <label>Description:</label>
+    <textarea name="description">{{subscription.description}}</textarea><br>
+    <button type="submit">Update</button>
+    
+  </form>
+</body>
+</html>

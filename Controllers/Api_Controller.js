@@ -2,6 +2,7 @@ import usermodel from "../Model/UserModel.js";
 import blockedmodel from "../Model/BlockedModel.js";
 import { Op } from "sequelize";
 import { Sequelize } from "sequelize";
+import crypto from "crypto";
 import path from "path";
 import { error } from "console";
 import messageModel from "../Model/messageModel.js";
@@ -9,45 +10,58 @@ import exp from "constants";
 import reportModel from "../Model/reportModel.js";
 import favoriteModel from "../Model/FavoriteModel.js";
 import interestedModel from "../Model/IntrestedModel.js";
+import payuConfig from "../payuConfig.js";
+import SubscriptionModel from "../Model/subscriptionModel.js";
+import PayUModel from "../Model/PayUModel.js";
+import StatusModel from "../Model/StatusModel.js";
+import { subscribe } from "diagnostics_channel";
+import { toASCII } from "punycode";
+
+// import { payuConfig  }  from  "../../Config/payuConfig.js";
+// import payUModel from "../Model/PayUModel.js";
+// import { transferableAbortController } from "util";
+// import PayUModel from "../Model/PayUModel.js";
 
 export const userregister = async (req, res) => {
     try {
         const body = req.body;
 
-        const {
-            phonenumber,
-            name,
-            email,
-            age,
-            gender,
-            about,
-            relationship,
-            interest,
-            latitude,
-            longitude,
-        } = body;
+    const {
+      phonenumber,
+      name,
+      email,
+      age,
+      gender,
+      about,
+      relationship,
+      interest,
+      latitude,
+      longitude,
+      fcm_user_id
+    } = body;
 
         let profileimage = null;
 
         console.log("body data", body);
 
-        if (
-            !phonenumber ||
-            !name ||
-            !email ||
-            !age ||
-            !gender ||
-            !relationship ||
-            !interest ||
-            !relationship ||
-            !latitude ||
-            !longitude
-        ) {
-            return res.status(401).json({
-                success: false,
-                message: "All filed are required",
-            });
-        }
+    if (
+      !phonenumber ||
+      !name ||
+      !email ||
+      !age ||
+      !gender ||
+      !relationship ||
+      !interest ||
+      !relationship ||
+      !latitude ||
+      !longitude ||
+      !fcm_user_id
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "All filed are required",
+      });
+    }
 
         // Validate phone number
         // const phoneRegex = /^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/;
@@ -101,19 +115,20 @@ export const userregister = async (req, res) => {
             }
         }
 
-        const data = await usermodel.create({
-            phonenumber,
-            name,
-            email,
-            age,
-            gender,
-            about,
-            looking_for: relationship,
-            interest,
-            profileimage,
-            latitude,
-            longitude,
-        });
+    const data = await usermodel.create({
+      phonenumber,
+      name,
+      email,
+      age,
+      gender,
+      about,
+      looking_for: relationship,
+      interest,
+      profileimage,
+      latitude,
+      longitude,
+      fcm_user_id
+    });
 
         console.log("new data", data);
 
@@ -132,34 +147,60 @@ export const userregister = async (req, res) => {
 };
 
 export const userlogin = async (req, res) => {
-    const body = req.body;
+    try {
+        const body = req.body;
+        const { phonenumber } = body;
 
-    const { phonenumber } = body;
+        if (!phonenumber) {
+            return res.status(401).json({
+                success: false,
+                message: "Phone number required",
+            });
+        }
 
-    if (!phonenumber) {
-        return res.status(401).json({
+        // Find the user by phone number
+        const userlogin = await usermodel.findOne({ where: { phonenumber } });
+
+        if (!userlogin) {
+            return res.status(401).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Check if the user is disabled in the reportModel
+        const isDisabled = await StatusModel.findOne({
+            where: {
+                userId: userlogin.id,
+                status: "disable",
+            },
+        });
+
+        if (isDisabled) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is disabled due to multiple reports. please contact support.",
+            })
+        }
+
+        // Save user session
+        req.session.user = userlogin;
+
+        console.log("user-session", req.session.user);
+
+        return res.status(201).json({
+            success: true,
+            message: "Logged In Successfully.",
+            data: userlogin,
+        });
+    } catch (err) {
+        console.error("Error during user login:", err);
+        return res.status(500).json({
             success: false,
-            message: "Phone number required",
+            message: "Internal Server Error",
+            error: err.message,
         });
     }
-
-    const userlogin = await usermodel.findOne({ where: { phonenumber } });
-
-    if (!userlogin) {
-        return res.status(401).json({
-            success: false,
-            message: "User not found",
-        });
-    }
-
-    req.session.user = userlogin;
-
-    console.log("user-session", req.session.use);
-    return res.status(201).json({
-        success: true,
-        message: "Logged In Successfully.",
-        data: userlogin,
-    });
 };
 
 export const updateuserprofile = async (req, res) => {
@@ -247,6 +288,7 @@ export const updateuserprofile = async (req, res) => {
         });
     }
 };
+
 export const updatelocation = async (req, res) => {
     try {
         const { id } = req.params;
@@ -319,7 +361,7 @@ export const getuserprofile = async (req, res) => {
     }
 };
 
-// export const getalluser = async (req, res) => {
+//  export const getalluser = async (req, res) => {
 //   try {
 //     const { id } = req.params;
 
@@ -691,7 +733,7 @@ export const removeFavorite = async (req, res) => {
     }
 };
 
-async function blockUser(reportedBy, reportedTo) {
+async function blockUser(reportedBy, reportedTo) { 
   try {
     await interestedModel.destroy({
       where: {
@@ -717,6 +759,88 @@ async function blockUser(reportedBy, reportedTo) {
   }
 }
 
+// export const createReport = async (req, res) => {
+//     try {
+//       const { reportedBy, reportedTo, reason } = req.body;
+  
+//       if (!reportedBy || !reportedTo || !reason) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "All fields are required",
+//         });
+//       }
+  
+//       const alreadyReported = await reportModel.findOne({
+//         where: {
+//           [Op.and]: [{ reportedBy: reportedBy }, { reportedTo: reportedTo }],
+//         },
+//       });
+  
+//       if (alreadyReported) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "cannot report more than one time.",
+//           data: [],
+//         });
+//       }
+  
+//       // Check if a report already exists
+//       const existingReport = await reportModel.findOne({
+//         where: { reportedTo },
+//         order: [["createdAt", "DESC"]],
+//       });
+  
+    
+  
+//       if (existingReport) {
+//         const newReport = await reportModel.create({
+//           reportedBy: reportedBy,
+//           reportedTo: reportedTo,
+//           reason: reason,
+//           reportsCount: existingReport.reportsCount + 1,
+//         });
+  
+//         console.log("id", existingReport.id);
+  
+//         if (existingReport.reportsCount + 1 >= 5) {
+//           await reportModel.update(
+//             { status: "disabled" },
+//             { where: { reportedBy, reportedTo } }
+//           );
+//         }
+  
+//         return res.status(200).json({
+//           success: true,
+//           message: "Report updated successfully",
+//           data: newReport,
+//         });
+//       } else {
+//         // Create a new report if it doesn't exist
+//         blockUser(reportedBy, reportedTo);
+  
+//         const newReport = await reportModel.create({
+//           reportedBy,
+//           reportedTo,
+//           reason,
+//         });
+
+  
+//         return res.status(200).json({
+//           success: true,
+//           message: "Report created successfully",
+//           data: newReport,
+//         });
+//       }
+//     } catch (error) {
+//       console.error("Error creating report:", error);
+//       return res.status(500).json({
+//         success: false,
+//         message: "Internal Server Error",
+//         error: error.message,
+//       });
+//     }
+//   };
+
 export const createReport = async (req, res) => {
     try {
       const { reportedBy, reportedTo, reason } = req.body;
@@ -727,67 +851,73 @@ export const createReport = async (req, res) => {
           message: "All fields are required",
         });
       }
+
+
   
+      // Prevent duplicate reports from the same user to the same user
       const alreadyReported = await reportModel.findOne({
         where: {
-          [Op.and]: [{ reportedBy: reportedBy }, { reportedTo: reportedTo }],
+          [Op.and]: [{ reportedBy }, { reportedTo }],
         },
       });
+
+      console.log("alreadyReported", alreadyReported);
   
       if (alreadyReported) {
         return res.status(400).json({
           success: false,
-          message: "cannot report more than one time.",
+          message: "You have already reported this user.",
           data: [],
         });
       }
   
-      // Check if a report already exists
-      const existingReport = await reportModel.findOne({
+      // Create a new report
+      const newReport = await reportModel.create({
+        reportedBy,
+        reportedTo,
+        reason,
+      });
+
+      console.log("newReport", newReport);
+
+  
+      // Count total reports for the reported user
+      const reportCount = await reportModel.count({
         where: { reportedTo },
-        order: [["createdAt", "DESC"]],
       });
   
-      // console.log("countss", existingReport.reportsCount + 1);
+      console.log("reportCount", reportCount);
+      // Determine the new status
+      const status = reportCount >= 5 ? "disable" : "enable";
   
-      if (existingReport) {
-        const newReport = await reportModel.create({
-          reportedBy: reportedBy,
-          reportedTo: reportedTo,
-          reason: reason,
-          reportsCount: existingReport.reportsCount + 1,
-        });
+
+      const statussushrut =  await StatusModel.upsert({
+        userId: reportedTo,
+        status: status,
+        totalCount: reportCount,
+      });
+
+      console.log("Status upsert:", statussushrut );
+      
   
-        console.log("id", existingReport.id);
-  
-        if (existingReport.reportsCount + 1 >= 3) {
-          await reportModel.update(
-            { status: "disabled" },
-            { where: { reportedBy, reportedTo } }
-          );
-        }
-  
-        return res.status(200).json({
-          success: true,
-          message: "Report updated successfully",
-          data: newReport,
-        });
-      } else {
-        // Create a new report if it doesn't exist
+      // Block the user (if needed)
+      if (reportCount === 1) {
         blockUser(reportedBy, reportedTo);
-  
-        const newReport = await reportModel.create({
-          reportedBy,
-          reportedTo,
-          reason,
-        });
-  
-        return res.status(200).json({
-          success: true,
-          message: "Report created successfully",
-          data: newReport,
-        });
       }
+  
+
+      return res.status(200).json({
+        success: true,
+        message: "Report submitted successfully",
+        data: {
+          report: newReport,
+          status: {
+            userId: reportedTo,
+            status,
+            totalCount: reportCount,
+          },
+        },
+      });
     } catch (error) {
       console.error("Error creating report:", error);
       return res.status(500).json({
@@ -797,9 +927,8 @@ export const createReport = async (req, res) => {
       });
     }
   };
+ 
   
-
-
 export const addInterest = async (req, res) => {
     try {
         const { interestedBy, interestedTo } = req.body;
@@ -849,13 +978,14 @@ export const addInterest = async (req, res) => {
     }
 };
 
+
 export const getInterests = async (req, res) => {
     try {
         const { id } = req.params;
 
         // Fetch interests along with the associated user data for 'interestedTo'
         const interests = await interestedModel.findAll({
-            where: { interestedBy: id },
+            where: { interestedBy: id, status:"panding" },
             include: [
                 {
                     model: usermodel, // Reference the User model for the interestedTo (interestedTarget)
@@ -905,6 +1035,7 @@ export const getInterests = async (req, res) => {
     }
 };
 
+
 export const removeInterest = async (req, res) => {
     try {
         const { interestedBy, interestedTo } = req.body;
@@ -939,6 +1070,7 @@ export const removeInterest = async (req, res) => {
         });
     }
 };
+
 
 export const getInterestsOnMe = async (req, res) => {
     try {
@@ -997,6 +1129,7 @@ export const getInterestsOnMe = async (req, res) => {
     }
 };
 
+
 export const rejectInterestOnMe = async (req, res) => {
     try {
         const { interestedBy, interestedTo } = req.body;
@@ -1034,6 +1167,7 @@ export const rejectInterestOnMe = async (req, res) => {
         });
     }
 };
+
 
 export const acceptInterestOnMe = async (req, res) => {
     try {
@@ -1075,7 +1209,6 @@ export const acceptInterestOnMe = async (req, res) => {
     }
 };
 
-// export const myConnections = async (req, res) => {
 //     try {
 //       const { id } = req.params;
 
@@ -1152,6 +1285,7 @@ export const acceptInterestOnMe = async (req, res) => {
 //       });
 //     }
 //   };
+
 
 export const myConnections = async (req, res) => {
     try {
@@ -1230,6 +1364,7 @@ export const myConnections = async (req, res) => {
     }
 };
 
+
 export const removeConnection = async (req, res) => {
     try {
         const { removeBy, removeTo } = req.body;
@@ -1281,101 +1416,766 @@ export const removeConnection = async (req, res) => {
 };
 
 
-export const getalluser = async (req, res) => {
+ export const updatefirebaseuuid = async (req, res) => {
     try {
       const { id } = req.params;
   
-      // Extract filters from the request body or query
-      const { gender, minAge, maxAge, latitude, longitude, maxDistance, maxCount } = req.body;
+      const {fcm_user_id} = req.body;
   
-      // Get blocked users
-      const blockedUsers = await reportModel.findAll({
-        where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
-        attributes: ["reportedBy", "reportedTo"],
-      });
+      console.log("Received request body:", req.body);
+      console.log("Uploaded files:", req.files);
   
-      // Get disabled users >>>>
-      const disabledUsers = await reportModel.findAll({
-        where: { status: "disabled" },
-        attributes: ["reportedTo"],
-      });
-  
-      const blockedUsersIds = blockedUsers.flatMap((user) => [user.reportedTo, user.reportedBy]);
-      const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
-  
-      const excludeUserIds = [
-        ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
-      ];
-
-      console.log('Excluded User ID:', excludeUserIds);
-  
-      // Build where conditions dynamically
-      let whereConditions = {
-        id: {
-          [Op.notIn]: excludeUserIds,
-        },
-      };
-  
-      if (gender) {
-        whereConditions.gender = gender; // Filter by gender (male or female)
+      if (!latitude) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
       }
   
-      if (minAge || maxAge) {
-        const currentDate = new Date();
-        const ageFilter = [];
-        
-        if (minAge) {
-          ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
-            [Op.gte]: minAge * 365 // Approximate age by days
-          }));
-        }
-        if (maxAge) {
-          ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
-            [Op.lte]: maxAge * 365 // Approximate age by days
-          }));
-        }
-  
-        if (ageFilter.length) {
-          whereConditions[Op.and] = ageFilter;
-        }
+      const user = await usermodel.findByPk(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "user not found",
+        });
       }
   
-      if (latitude && longitude && maxDistance) {
-        whereConditions[Op.and] = whereConditions[Op.and] || [];
-  
-        // Add distance calculation condition (using geolib's getDistance function or a similar method)
-        whereConditions[Op.and].push(Sequelize.where(
-          Sequelize.fn('ST_DistanceSphere',
-            Sequelize.col('location'), // Assuming 'location' column stores the lat/lng as a POINT
-            Sequelize.fn('ST_GeomFromText', `POINT(${longitude} ${latitude})`)
-          ),
-          { [Op.lte]: maxDistance * 1000 } // Convert distance to meters (geolib returns meters)
-        ));
-      }
-  
-      // Fetch users with the applied filters
-      const users = await usermodel.findAll({
-        where: whereConditions,
-        limit: maxCount || 100, // Default to 100 if maxCount is not provided
+      await user.update({
+        fcm_user_id,
       });
   
       return res.status(200).json({
         success: true,
-        message: "Users fetched successfully",
-        data: users,
+        message: "fuuid Updated Successfully",
+        data: user,
       });
-
     } catch (err) {
-      console.error("Error getting user profile:", err);
+      console.error("Error updating user fuuid:", err);
       return res.status(500).json({
         success: false,
-        message: "Internal Server error",
+        message: "Internal server error",
         error: err.message,
       });
-
     }
   };
 
 
+//  export const getalluser = async (req, res) => {
+
+//    try {
+//       const { id } = req.params;
+//       const { gender, minAge, maxAge, latitude, longitude, maxDistance, maxCount } = req.body;
+
+//       console.log('Request params:', req.params);
+//       console.log('Request body:', req.body);
+  
+//       const blockedUsers = await reportModel.findAll({
+//         where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+//         attributes: ["reportedBy", "reportedTo"],
+//       });
+  
+//       const disabledUsers = await reportModel.findAll({
+//         where: { status: "disabled" },
+//         attributes: ["reportedTo"],
+//       });
+  
+//       const blockedUsersIds = blockedUsers.flatMap((user) => [
+//         user.reportedTo,
+//         user.reportedBy,
+//       ]);
+//       const disabledUsersIds = disabledUsers.map((user) => user.reportedTo);
+  
+//       const excludeUserIds = [
+//         ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
+//       ];
+  
+//        console.log('Excluded User IDs:', excludeUserIds);
+
+//        let whereConditions = {
+//         id: {
+//             [Op.notIn]: excludeUserIds,
+//         },
+//        };
+
+//        if (gender) {
+//         whereConditions.gender = gender;
+//        }
+
+//        if (minAge || maxAge ) {
+//         const currentDate = new Date();
+//         const ageFilter = [];
+
+//         if (minAge) {
+//             ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
+//                 [Op.gte]: minAge * 365
+//             }));   
+//         }
+//         if (maxAge) {
+//             ageFilter.push(Sequelize.where(Sequelize.fn('DATEDIFF', currentDate, Sequelize.col('age')), {
+//                 [Op.lte]: maxAge * 365
+//             }));
+//         }
+
+//         if ( ageFilter.length) {
+//             whereConditions[Op.and] = whereConditions[Op.and] || [];
+
+//        whereConditions[Op.and].push(Sequelize.where(
+//            Sequelize.fn('ST_Distance_Sphere',
+//                Sequelize.col('location'),
+//                Sequelize.fn('ST_GeomFromText', `POINT(${longitude} ${latitude})`)
+//            ),
+//            { [Op.lte]: maxDistance * 1000 }
+//        )); 
+
+//         console.log('Final Where Conditons:', whereConditions);
+
+//         const users = await usermodel.findAll({
+//             where: whereConditions,
+//             limit: maxCount || 100,
+//         });
+
+//         console.log('Users fetched:', users.length);
+       
+//     }
+//       return res.status(200).json({
+//         success: true,
+//         message: "Users fetched successfully",
+//         data: users,
+//       });
+//     } catch (err) {
+//       console.error("Error geting user profile:", err);
+//       return res.status(500).json({
+//         success: false,
+//         message: "Internal Server error",
+//         error: err.message,
+//       });
+//     }
+//   };
+
+
+export const getalluser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            gender,
+            minAge,
+            maxAge,
+            latitude,
+            longitude,
+            maxDistance,
+            maxCount,
+            about,
+            interest,
+            looking_for
+        } = req.body;
+
+    
+        // Validate coordinates if distance filter applied
+        if ((latitude === undefined || longitude === undefined) && maxDistance) {
+            return res.status(400).json({
+                success: false,
+                message: "Latitude and Longitude are required for distance filtering"
+            });
+        }
+
+        // 1. Fetch blocked users
+        const blockedUsers = await reportModel.findAll({
+            where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+            attributes: ["reportedBy", "reportedTo"],
+        });
+
+        const blockedUsersIds = blockedUsers.flatMap(user => [
+            user.reportedBy,
+            user.reportedTo,
+        ]);
+
+        // 2. Fetch disabled users from StatusModel
+        const disabledUsers = await StatusModel.findAll({
+            where: { status: "disable" },
+            attributes: ["userId"],
+        });
+
+        const disabledUserIds = disabledUsers.map(user => user.userId);
+
+        // 3. Exclude blocked + disabled + self
+        const excludeUserIds = [...new Set([...blockedUsersIds, ...disabledUserIds, Number(id)])];
+        console.log('Excluded User IDs:', excludeUserIds);
+
+        // 4. Where clause base
+        const whereConditions = {
+            id: { [Op.notIn]: excludeUserIds },
+        };
+
+        if (gender) whereConditions.gender = gender;
+
+        if (minAge || maxAge) {
+            whereConditions.age = {};
+            if (minAge) whereConditions.age[Op.gte] = minAge;
+            if (maxAge) whereConditions.age[Op.lte] = maxAge;
+        }
+
+        if (about) {
+            whereConditions.about = { [Op.like]: `%${about}%` };
+        }
+
+        if (interest) {
+            whereConditions.interest = { [Op.like]: `%${interest}%` };
+        }
+
+        if (looking_for) {
+            whereConditions.looking_for = { [Op.like]: `%${looking_for}%` };
+        }
+
+        console.log('Final Where Conditions:', whereConditions);
+
+        // 5. Attributes to return
+        const attributes = [
+            "id",
+            "name",
+            "profileimage",
+            "latitude",
+            "longitude",
+            "age",
+            "about",
+            "interest",
+            "looking_for",
+        ];
+
+        // 6. Distance logic
+        if (latitude !== undefined && longitude !== undefined) {
+            attributes.push([
+                Sequelize.literal(`ST_Distance_Sphere(
+                    POINT(${longitude}, ${latitude}),
+                    POINT(CAST(longitude AS DECIMAL(10, 6)), CAST(latitude AS DECIMAL(10, 6)))
+                ) / 1000`), // convert to km
+                "distance"
+            ]);
+        }
+
+        // 7. Final query
+        const users = await usermodel.findAll({
+            where: whereConditions,
+            attributes,
+            ...(latitude !== undefined && longitude !== undefined && {
+                having: Sequelize.literal(`distance <= ${maxDistance || 10000}`),
+                order: Sequelize.literal("distance ASC"),
+            }),
+            limit: maxCount || 100,
+        });
+
+        console.log('Users fetched:', users.length);
+
+        return res.status(200).json({
+            success: true,
+            message: "Users fetched successfully",
+            data: users,
+        });
+
+    } catch (err) {
+        console.error("Error getting user profile:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: err.message,
+        });
+    }
+};
+
+
+
+// export const getalluser = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const {
+//             gender,
+//             minAge,
+//             maxAge,
+//             latitude,
+//             longitude,
+//             maxDistance,
+//             maxCount,
+//             about,
+//             interest,
+//             looking_for
+//         } = req.body;
+
+//         console.log('Request params:', req.params);
+//         console.log('Request body:', req.body);
+
+//         // Validate location if required for distance
+        
+//         if ((latitude === undefined || longitude === undefined) && maxDistance) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Latitude and Longitude are required for distance filtering"
+//             });
+//         }
+
+//         // Fetch blocked and disabled users
+//         const blockedUsers = await reportModel.findAll({
+//             where: { [Op.or]: [{ reportedBy: id }, { reportedTo: id }] },
+//             attributes: ["reportedBy", "reportedTo"],
+//         });
+
+//         const disabledUsers = await reportModel.findAll({
+//             where: { status: "disabled" },
+//             attributes: ["reportedTo"],
+//         });
+
+//         const blockedUsersIds = blockedUsers.flatMap(user => [
+//             user.reportedBy,
+//             user.reportedTo,
+//         ]);
+
+//         const disabledUsersIds = disabledUsers.map(user => user.reportedTo);
+
+//         const excludeUserIds = [
+//             ...new Set([...blockedUsersIds, ...disabledUsersIds, Number(id)]),
+//         ];
+
+//         console.log('Excluded User IDs:', excludeUserIds);
+
+//         // Build where conditions
+//         const whereConditions = {
+//             id: { [Op.notIn]: excludeUserIds },
+//         };
+
+//         if (gender) whereConditions.gender = gender;
+
+//         if (minAge || maxAge) {
+//             const ageCondition = {};
+//             if (minAge) ageCondition[Op.gte] = minAge;
+//             if (maxAge) ageCondition[Op.lte] = maxAge;
+
+//             whereConditions.age = ageCondition;
+//         }
+
+//         if (about) {
+//             whereConditions.about = { [Op.like]: `%${about}%` };
+//         }
+
+//         if (interest) {
+//             whereConditions.interest = { [Op.like]: `%${interest}%` };
+//         }
+
+//         if (looking_for) {
+//             whereConditions.looking_for = { [Op.like]: `%${looking_for}%` };
+//         }
+
+//         console.log('Final Where Conditions:', whereConditions);
+//         console.log('Latitude:', latitude, 'Longitude:', longitude);
+//         console.log('Max Distance:', maxDistance);
+
+//         const attributes = [
+//             "id",
+//             "name",
+//             "profileimage",
+//             "latitude",
+//             "longitude",
+//             "age",
+//             "about",
+//             "interest",
+//             "looking_for"
+//         ];
+
+//         // Add distance calculation only if lat/lng provided
+//         if (latitude !== undefined && longitude !== undefined) {
+//             attributes.push([
+//                 Sequelize.literal(`ST_Distance_Sphere(
+//                     POINT(${longitude}, ${latitude}),
+//                     POINT(longitude, latitude)
+//                 ) / 1000`),
+//                 "distance"
+//             ]);
+//         }
+
+//         // Main query
+//         const users = await usermodel.findAll({
+//             where: whereConditions,
+//             attributes,
+//             ...(latitude !== undefined && longitude !== undefined && {
+//                 having: Sequelize.literal(`distance <= ${maxDistance || 10000}`),
+//                 order: Sequelize.literal("distance ASC"),
+//             }),
+//             limit: maxCount || 100,
+//         });
+
+//         console.log('Users fetched:', users.length);
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Users fetched successfully",
+//             data: users,
+//         });
+//     } catch (err) {
+//         console.error("Error getting user profile:", err);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal Server Error",
+//             error: err.message,
+//         });
+//     }
+// };
+
+
+export const initiatePayment = async (req, res) => {
+    try {
+        const { userId, amount, productInfo, email, phone } = req.body;
+
+        const transactionId = `TXN${Date.now()}`;
+
+        const hashString = `${payuConfig.key}|${transactionId}|${amount}|${productInfo}|${email}|${phone}|||||||||||${payuConfig.salt}`;
+        const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+        // Save to DB
+        await PayUModel.create({
+            userId,
+            transactionId,
+            amount,
+            status: "pending",
+            productInfo,
+            email,
+            phonenumber: phone,
+            hash,
+        });
+
+        // Send payment data to frontend
+        const paymentData = {
+            key: payuConfig.key,
+            txnid: transactionId,
+            amount,
+            productinfo: productInfo,
+            firstname: email.split("@")[0], // extract name from email
+            email,
+            phone,
+            surl: payuConfig.successUrl,
+            furl: payuConfig.failureUrl,
+            hash,
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: "Payment initiated successfully",
+            paymentData,
+            payuUrl: `${payuConfig.baseUrl}/_payment`,
+        });
+
+    } catch (error) {
+        console.error("Error initiating payment:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+};
+
+
+export const handleWebhook = async (req, res) => {
+    try {
+        const {
+            txnid,
+            status,
+            hash, 
+            mode,
+            amount,
+            productinfo,
+            email,
+            firstname
+        } = req.body;
+
+        // Log received data for debugging
+        console.log("Received Webhook:", req.body);
+
+        // Generate the reverse hash string as per PayU specs
+        const hashString = `${payuConfig.salt}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${payuConfig.key}`;
+        const calculatedHash = crypto.createHash("sha512").update(hashString).digest("hex");
+        
+        // Validate the hash
+        if (hash !== calculatedHash) {
+            console.error("Invalid hash. Expected:", calculatedHash);
+            return res.status(400).json({
+                success: false,
+                message: "Invalid hash",
+            });
+        }
+
+        // Update payment status in DB
+        const updated = await PayUModel.update(
+            {
+                status,
+                paymentMode: mode,
+                hash,
+            },
+            {
+                where: { transactionId: txnid },
+            }
+        );
+
+        if (updated[0] === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Transaction not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Transaction status updated successfully",
+        });
+
+    } catch (error) {
+        console.error("Error in webhook handler:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+};
+
+
+export const createSubscription =async (req,res) => {
+    try {
+        const { userId, planeName, amount, durationInDays } = req.body;
+
+        if (!userId || !planeName || !amount || !durationInDays) { 
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        // check if the user exists
+        const user = await usermodel.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // calculate the end date based on the duration
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + durationInDays);
+
+        // create the subscription
+        const subscription = await SubscriptionModel.create({
+            userId,
+            planeName,
+            amount,
+            startDate,
+            endDate,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Subscription created successfully",
+            data: subscription,
+        });
+    } catch (error) {
+        console.error("Error creating subscription:" , error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+}
+
+// Get all subscrptions for a user
+
+export const getSubscriptions = async (req,res) => {
+    try{
+        const { userId } = req.params;
+
+        // Fetch subscriptions for the user
+        const subscription = await SubscriptionModel.findAll({
+            where: { userId },
+        });
+
+        if (!subscription.length) {
+            return res.status(404).json({
+                success: false,
+                message: "No subscriptions found for this user",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User subsriptions fetched successfully",
+            data: subscription,
+        });
+    } catch (error) {
+        console.error("Error fetching subscriptions:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+};
+
+
+export const UserUnblock = async (req,res) => {
+    try {
+        const { reportedBy, reportedTo } = req.body;
+
+        if (!reportedBy || !reportedTo ) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        // check if a report exists
+        const existingReport = await reportModel.findOne({
+            where: {
+                reportedBy,
+
+                
+                reportedTo,
+            }
+        }); 
+
+        console.log("existingReport", existingReport);
+
+        if (!existingReport) {
+            return res.status(404).json({
+                success: false,
+                message: "No block record found for this user",
+            })
+        }
+
+        // check if the user is disabled
+        if (!existingReport . status === "disabled") {
+            return res.status(403).json({
+                success: false,
+                message: "User is disabled and cannot be unblocked",
+            });
+        }
+
+        // // check if the reportsCount is less than 3
+        if (existingReport.reportsCount >= 5) {
+            return res.status(403).json({
+                success: false,
+                message: "User caanot be unblocked due to high report count",
+            });
+        }
+
+        // // update the report status to "active" and reset the reportsCount
+        await reportModel.update(
+            { where: { reportedBy, reportedTo } },
+            { status: "active", reportsCount: 0 },
+             
+        );
+        
+    } catch (error) {
+        console.error("Error unblocking user:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+};
+
+
+export const chatBlockUser = async (req, res) => {
+    try {
+        const { sender_id, receiver_id, message } = req.body;
+
+        if (!sender_id || !receiver_id || !message) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields (sender_id, receiver_id, message) are required.",
+            });
+        }
+
+        // Check if either user has blocked the other
+        const blockExists = await reportModel.findOne({
+            where: {
+                [Op.or]: [
+                    { reportedBy: sender_id, reportedTo: receiver_id },
+                    { reportedBy: receiver_id, reportedTo: sender_id },
+                ],
+                status: "blocked", // make sure this matches your actual DB value exactly
+            },
+        });
+
+        console.log("Block record found:", blockExists); // Helpful debug line
+
+        // Prevent sending message if block record exists
+        if (blockExists) {
+            console.log("Blocked detected:", blockExists); // Helpful debug line
+            return res.status(403).json({
+                success: false,
+                message: `Messaging is not allowed. One user has blocked the other.`,
+            });
+        }
+
+        // If no block exists, proceed with message
+        const newMessage = await messageModel.create({
+            sender_id,
+            receiver_id,
+            message,
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Message sent successfully.",
+            data: newMessage,
+        });
+
+    } catch (error) {
+        console.error("Error sending message:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error.",
+            error: error.message,
+        });
+    }
+};
+        
+export const logoutUser = async (req,res) => {
+    try {
+        if(!req.session) {
+            return res.status(400).json({
+                success: false,
+                message: "No active session found.",
+            });
+        }
+         
+        console.log("req.session", req.session);
+        
+        // Destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+               console.error("Error destroying session:", err);
+               return res.status(500).json({
+                success: false,
+                message: "Failed to destroy session.",
+                error: err.message,
+               });
+            }
+
+            // Clear the session cookie
+            res.clearCookie("connect.sid");
+
+            return res.status(200).json({
+                success: true,
+                message: "Session destroyed successfully. User logged out.",
+            });
+        });
+    } catch (error) {
+        console.error("Error in logoutUser API:", error);
+        return res.status(500).json({
+            success:false,
+            message: "Internal Server Error",
+            error: error.message,
+        });
+    }
+};
 
 

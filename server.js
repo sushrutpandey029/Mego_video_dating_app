@@ -12,6 +12,14 @@ import path from "path";
 import connectSessionSequelize from "connect-session-sequelize";
 import flash from "connect-flash";
 
+
+
+// // Your PayU credentials (Sandbox/Test)
+// const key = 'your_merchant_key';
+// const salt = 'your_merchant_salt';
+// const payu_url = 'https://test.payu.in/_payment';
+
+
 const SequelizeStore = connectSessionSequelize(session.Store);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,20 +32,24 @@ const sessionStore = new SequelizeStore({
   db: sequelize,
 });
 
-app.use(express.json());
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
 //set view engine to handlebars
 app.engine("html", hbs.__express);
 app.set("view engine", "html");
-
 app.set("views", path.join(__dirname, "views"));
 hbs.registerPartials(path.join(__dirname, "views", "Partial"));
+
+
 app.use(express.static(path.join(__dirname, "public", "assets")));
 app.use('/profile-images', express.static(path.join(__dirname, 'view', 'src', 'ProfileImage')));
 
+hbs.registerHelper('inc', function (value) {
+  return parseInt(value) + 1;
+});
 
 app.use(
   session({

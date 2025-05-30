@@ -1,11 +1,16 @@
 import express from 'express'
+import verifyToken from "../Middlewares/verifyToken.js"; // Correct path for verifyToken.js
+import checkUserStatus from "../Middlewares/checkUserStatus.js"; // Correct path for checkUserStatus.js
 
 import {userregister, userlogin, updateuserprofile,getalluser,
        updatelocation, getuserprofile,sendmesg,chatlist,messagehistory,createReport,
        addFavorite,getFavorites,removeFavorite,addInterest,getInterests,
-       removeInterest,getInterestsOnMe,rejectInterestOnMe,acceptInterestOnMe,myConnections,removeConnection} from '../Controllers/Api_Controller.js'
-
+       removeInterest,getInterestsOnMe,rejectInterestOnMe,acceptInterestOnMe,myConnections,
+       removeConnection,initiatePayment,handleWebhook,createSubscription,getSubscriptions,
+       UserUnblock,chatBlockUser,
+       logoutUser} from '../Controllers/Api_Controller.js'
 import upload from '../Middlewares/ProfileUpload.js'
+import {generateAgoraToken} from '../Controllers/agoraToken.js'
 
 
 const router = express.Router();
@@ -19,9 +24,9 @@ router.get('/',(req,res)=>{
 
 router.post('/insertuser', upload.single('profileimage'), userregister);
 
-router.get('/userlogin', userlogin);
+router.get('/userlogin',  userlogin);
 
-router.put('/updateuserprofile/:id',upload.fields([
+router.put('/updateuserprofile/:id',checkUserStatus, upload.fields([
     { name: 'profileimage', maxCount: 1 },
     { name: 'Imageone', maxCount: 1 },
     { name: 'Imagetwo', maxCount: 1 },
@@ -31,41 +36,58 @@ router.put('/updateuserprofile/:id',upload.fields([
 
 ]),updateuserprofile);
 
-router.put('/updatelocation/:id',updatelocation);
+router.put('/updatelocation/:id',  checkUserStatus,updatelocation);
 
-router.get('/getuserprofile/:id', getuserprofile);
+router.get('/getuserprofile/:id',  checkUserStatus, getuserprofile);
 
-router.get('/getalluser/:id', getalluser);
+router.get('/getalluser/:id',   checkUserStatus,getalluser);
 
-router.post('/sendmesg', sendmesg);
+router.post('/sendmesg', checkUserStatus,sendmesg);
 
-router.get('/chatlist/:sender_id/:receiver_id', chatlist);
+router.post('/checkBlock', checkUserStatus,chatBlockUser);
 
-router.get('/messagehistory/:sender_id/:receiver_id', messagehistory);
+router.get('/chatlist/:sender_id/:receiver_id', checkUserStatus,chatlist);
 
-router.post('/favorite', addFavorite);
+router.get('/messagehistory/:sender_id/:receiver_id', checkUserStatus,messagehistory);
 
-router.get('/favorites/:id', getFavorites);
+router.post('/favorite', checkUserStatus, addFavorite);
 
-router.delete('/removefavorite', removeFavorite);
+router.get('/favorites/:id',checkUserStatus,getFavorites);
 
-router.post('/interest', addInterest);
+router.delete('/removefavorite',   checkUserStatus,removeFavorite);
 
-router.get('/interests/:id', getInterests);
+router.post('/interest',  checkUserStatus, addInterest);
 
-router.delete('/removeinterest', removeInterest);
+router.get('/interests/:id',checkUserStatus, getInterests);
 
-router.get('/interestOnMe/:id', getInterestsOnMe);
+router.delete('/removeinterest',   checkUserStatus,removeInterest);
 
-router.delete('/rejectinterestOnMe', rejectInterestOnMe );
+router.get('/interestOnMe/:id',   checkUserStatus,getInterestsOnMe);
 
-router.post('/acceptinterestOnMe', acceptInterestOnMe);
+router.delete('/rejectinterestOnMe',   checkUserStatus,rejectInterestOnMe );
 
-router.get('/myconnections/:id',myConnections);
+router.post('/acceptinterestOnMe',   checkUserStatus,acceptInterestOnMe);
 
-router.delete('/removeconnection',removeConnection);
+router.get('/myconnections/:id',  checkUserStatus,myConnections);
+router.delete('/removeconnection',  checkUserStatus,removeConnection);
 
-router.post('/report', createReport);
+router.post("/generate-token",  checkUserStatus, generateAgoraToken);
+
+// router.put("/generate-f_uuid/:id", updatefirebaseuuid);
+
+router.post('/report',   checkUserStatus, createReport);
+
+router.post("/payu/initiate",   checkUserStatus,initiatePayment);
+
+router.post("/payu/webhook",   checkUserStatus,handleWebhook);
+
+router.post("/subscriptions",   checkUserStatus,createSubscription);
+
+router.get("/getMySubscription/:userId",   checkUserStatus,getSubscriptions);
+
+router.post("/unblock",  checkUserStatus, UserUnblock);
+
+router.post("/logout/:userId", checkUserStatus, logoutUser);
 
 
 export default router;

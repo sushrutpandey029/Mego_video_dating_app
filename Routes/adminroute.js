@@ -12,12 +12,23 @@ import {
   renderMaleUser,
   renderFemaleUser,
   renderTotalUser,
-  // renderStatusUser,
-  // renderUserStatus,
-  // renderUpdateStatus,
-  // renderAdminChatList,
-  // renderAdminChatHistory,
-  getReports
+  disabledUserByAdmin,
+  getReports,
+  paymentHistroy,
+  getallUSerSubscription,
+  userProfileView,
+  AllUserReported,
+  getNewUsersInMonth,
+  getDisabledUsersCount,
+  getActiveUsers,
+  getReportedUsers,
+  AddSubscription,
+  getSubscription,
+  SubscriptionList,
+  editSubscription,
+  updateSubscription
+
+  
   
 } from "../Controllers/Admin_Controller.js";
 import verifyToken from "../Middlewares/verifyToken.js";
@@ -38,11 +49,19 @@ router.get("/female-users",verifyToken, renderFemaleUser);
 router.get("/users/female",verifyToken,renderFemaleUser);
 router.get("/users/male",verifyToken,renderMaleUser);
 router.get("/users",verifyToken,renderTotalUser);
-// router.post("/status/:id",verifyToken, renderStatusUser);
-// router.get("status/:id",verifyToken, renderUserStatus);
-// router.post("/statusUpdate/:id",verifyToken, renderUpdateStatus);
-// router.get('/chatlist/:sender_id',verifyToken,renderAdminChatList);
-// router.get('/messagehistory/:sender_id/:receiver_id', verifyToken,renderAdminChatHistory);
 router.get('/reports/:id',verifyToken, getReports);
-
+router.get('/payment-history',verifyToken,paymentHistroy);
+router.get('/getAllUserSubscription',verifyToken, getallUSerSubscription);
+router.get('/user-profile/:id',verifyToken,userProfileView);
+router.get('/all-reported-users/:id',verifyToken,AllUserReported );
+router.get("/users/new",verifyToken, getNewUsersInMonth);
+router.get("/users/disabled", getDisabledUsersCount);
+router.get("/users/active",verifyToken,getActiveUsers);
+router.get('/reported-users',getReportedUsers);
+router.post('/userdisable/:id', disabledUserByAdmin);
+router.post("/add-subscription", AddSubscription);
+router.get("/GetSubscription", getSubscription);
+router.get("/Susbscrption_List",SubscriptionList);
+router.get("/edit-subscription/:id",verifyToken, editSubscription);
+router.post("/update-subscription/:id", verifyToken, updateSubscription);
 export default router;

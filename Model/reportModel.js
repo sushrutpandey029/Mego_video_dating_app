@@ -17,16 +17,6 @@ const reportModel = sequelize.define('user_report', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    status: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'blocked'
-    },
-    reportsCount: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 1
-    }
 
 }, {
     tableName: 'user_report',

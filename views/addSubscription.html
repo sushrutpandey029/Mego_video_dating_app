@@ -1,0 +1,67 @@
+{{>Header}} 
+{{>sidebar}}
+
+<div class="container mt-4">
+    <!--begin::Row-->
+    <div class="row">
+        <div class="col-sm-6"><h3 class="mb-0">Add Subscription</h3></div>
+        <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-end">
+                <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Subscription</li>
+            </ol>
+        </div>
+    </div>
+    <!--end::Row-->
+
+    <form action="/add-subscription" method="POST">
+
+    <div class="form-group mb-3">
+        <label for="planName">Plan Name:</label>
+        <input 
+            type="text" 
+            class="form-control" 
+            id="planName" 
+            name="planName" 
+            required 
+        />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="amount">Amount:</label>
+        <input 
+            type="number" 
+            step="0.01"
+            class="form-control" 
+            id="amount" 
+            name="amount"  
+            required
+        />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="planType">Plan Type:</label>
+        <input 
+            type="text" 
+            class="form-control" 
+            id="planType" 
+            name="planType"  
+            required
+        />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="description">Description</label>
+        <textarea 
+            class="form-control" 
+            id="description" 
+            name="description"
+            rows="3" 
+        ></textarea>
+    </div>
+        <td><a href="/Susbscrption_List"><button type="button" class="btn btn-outline-primary mb-2">Submit</button></a></td> 
+    <!-- <button type="submit" class="btn btn-primary mt-3">Submit</button> -->
+</form>
+</div>
+
+{{>footer}}  

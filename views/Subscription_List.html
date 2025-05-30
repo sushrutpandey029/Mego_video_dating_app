@@ -1,0 +1,50 @@
+{{>Header}}{{>sidebar}}
+
+
+<div class="container mt-4">
+
+  <div class="row">
+    <div class="col-sm-6"><h3 class="mb-0">Users</h3></div>
+    <div class="col-sm-6">
+      <ol class="breadcrumb float-sm-end">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">
+          Users
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <table id="userTable" class="display">
+    <thead>
+      <tr>
+         <th>index</th>
+         <th>planName</th>
+         <th>amount</th>
+        <th>planType</th>
+        <th>description</th>
+       
+       
+      </tr>
+    </thead>
+    <tbody>
+        {{#each subscription}}
+      <tr>
+       
+        <td>{{inc @index}}</td>
+        <td>{{this.planName}}</td>
+        <td>{{this.amount}}</td>
+        <td>{{this.planType}}</td>
+        <td>{{this.description}}</td>
+
+        <td>
+  <a href="/edit-subscription/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">Edit</button> </a>
+</td>
+        
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+{{>footer}} 

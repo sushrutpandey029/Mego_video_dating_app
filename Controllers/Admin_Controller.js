@@ -2,13 +2,16 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import adminModel from "../Model/adminModel.js";
+import PayUModel from "../Model/PayUModel.js";
 import usermodel from "../Model/UserModel.js";
-import Statusmodel from "../Model/StatusModel.js";
-import statusModel from "../Model/StatusModel.js";
 import messageModel from "../Model/messageModel.js";
 import reportModel from "../Model/reportModel.js";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { response } from "express";
+import SubscriptionModel from "../Model/subscriptionModel.js";
+import StatusModel from "../Model/StatusModel.js";
+import Subscription from "../Model/addPlanModel.js";
+import  Subscription_Plan from "../Model/addPlanModel.js";
 
 dotenv.config();
 
@@ -123,25 +126,59 @@ export const adminRegister = async (req, res) => {
 
 export const renderDashboard = async (req, res) => {
   try {
-    const user = await usermodel.findAll();
-    // console.log("user", user);
+    const currentDate = new Date();
 
-    const totalUsers = user.length;
-    const maleUsers = user.filter((user) => user.gender === "male").length;
-    const femaleUsers = user.filter((user) => user.gender === "female").length;
+    // Define the full date range for current month in local time
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const users = await usermodel.findAll();
+
+    const totalUsers = users.length;
+    const maleUsers = users.filter(user => user.gender === "male").length;
+    const femaleUsers = users.filter(user => user.gender === "female").length;
+
+    const newUsers = await usermodel.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [firstDayOfMonth, lastDayOfMonth],
+        },
+      },
+    });
+
+    const disabledUsers = await StatusModel.count({
+      where: { status: "disable" }
+    })
+    console.log("disabledUsers", disabledUsers);
+    console.log("Date range:", firstDayOfMonth, lastDayOfMonth);
+    console.log("New Users This Month:", newUsers.length);
+
+    const activeUsers = totalUsers - disabledUsers;
+
+    //  Count of reported users (distinct reportedTo)
+    const reportedUsersCount = await reportModel.count({
+      col: 'reportedTo',
+      distinct: true,
+    });
+
+
 
     const countUsers = {
       totalUsers,
       maleUsers,
       femaleUsers,
-    };
+      NewUsers: newUsers.length,
+      disabledUsers,
+      activeUsers,
+      reportedUsersCount
 
-    // req.session.countUsers = countUsers;
-    console.log("session-data", req.session);
+
+    };
 
     return res.render("dashboard", { user: req.session.admin, countUsers });
   } catch (err) {
-    console.log(err);
+    console.error("Error in renderDashboard:", err);
+    return res.status(500).send("Internal Server Error");
   }
 };
 
@@ -322,206 +359,13 @@ export const renderFemaleUser = async (req, res) => {
   }
 };
 
-// export const renderStatusUser = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-//     const { status } = req.body;
-
-//     if (!["enable", "disable"].includes(status)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid status value",
-//       });
-//     }
-
-//     const user = await usermodel.findByPk(userId);
-
-//     if (!user) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-
-//     await statusModel.insert({ userId, status });
-//     return res.status(200).json({
-//       success: true,
-//       message: "User status updated successfully",
-//     });
-//   } catch (err) {
-//     console.error("Error updating user status:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       error: err.message,
-//     });
-//   }
-// };
-
-// Get user status
-
-// export const renderUserStatus = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-
-//     const status = await Statusmodel.findOne({ where: { userId } });
-//     if (!status) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User status not found",
-//       });
-//     }
-//     return res.status(200).json({
-//       success: true,
-//       data: status,
-//     });
-//   } catch (err) {
-//     console.error("Error fetching user status:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internasl server error",
-//       error: err.message,
-//     });
-//   }
-// };
-
-// export const renderUpdateStatus = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-//     const { status } = req.body;
-
-//     if (!["enable", "disable"].includes(status)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid status value",
-//       });
-//     }
-//     const user = await usermodel.findByPk(userId);
-//     if (!user) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-//     await statusModel.update({ status }, { where: { userId } });
-//     return res.status(200).json({
-//       success: true,
-//       message: "User status updated successfully",
-//     });
-//   } catch (err) {
-//     console.error("Error updating user status:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       error: err.message,
-//     });
-//   }
-// };
-
-// export const renderAdminChatList = async (req, res) => {
-//   try {
-//     const { sender_id } = req.params;
-
-//     // Fetch chat data with latest messages first
-//     const chatdata = await messageModel.findAll({
-//       where: { sender_id },
-//       attributes: ["receiver_id", "message", "createdAt"],
-//       order: [["createdAt", "DESC"]], // Order by latest messages first
-//     });
-
-//     console.log("chatdata", chatdata);
-
-//     if (!chatdata.length) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "User Chat list is Empty",
-//         data: null,
-//       });
-//     }
-//     // Remove duplicates, keeping only the latest message per receiver
-//     const uniqueChatData = [];
-//     const seenReceivers = new Set();
-
-//     for (const chat of chatdata) {
-//       if (!seenReceivers.has(chat.receiver_id)) {
-//         seenReceivers.add(chat.receiver_id);
-//         uniqueChatData.push(chat);
-//       }
-//     }
-
-//     // Extract unique receiver IDs
-//     const receiverIds = uniqueChatData.map((chat) => chat.receiver_id);
-
-//     console.log("receiverIds", receiverIds);
-
-//     // Fetch user details for all receiver IDs
-//     const userdata = await usermodel.findAll({
-//       where: { id: { [Op.in]: receiverIds } },
-//       attributes: ["id", "name", "profileimage", "phonenumber"],
-//     });
-
-//     console.log("userdata", userdata);
-
-//     return res.render("chatlist", {
-//       userlist: userdata,
-//       chatdata: uniqueChatData,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching chat list:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
-// export const renderAdminChatHistory = async (req, res) => {
-//   try {
-//     const { sender_id, receiver_id } = req.params;
-
-//     // Fetch chat history between sender and receiver
-//     const chatHistory = await messageModel.findAll({
-//       where: {
-//         [Op.or]: [
-//           { sender_id, receiver_id },
-//           { sender_id: receiver_id, receiver_id: sender_id },
-//         ],
-//       },
-//       attributes: ["sender_id", "receiver_id", "message", "createdAt"],
-//       order: [["createdAt", "ASC"]], // Order by oldest messages first
-//     });
-
-//     console.log("chatHistory", chatHistory);
-
-//     if (!chatHistory.length) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Chat history is empty",
-//         data: null,
-//       });
-//     }
-
-//     return res.render("chatHistory", {
-//       chatHistory: chatHistory,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching chat history:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
 export const getReports = async (req, res) => {
   try {
     const { id } = req.params;
 
     const reports = await reportModel.findAll({
       where: { reportedTo: id },
-      attributes: ["id","reportedBy", "reportedTo", "reason", "status", "reportsCount","createdAt"],
+      attributes: ["id", "reportedBy", "reportedTo", "reason", "createdAt"],
     });
 
     console.log("reports", reports);
@@ -540,7 +384,7 @@ export const getReports = async (req, res) => {
       };
     });
 
-    console.log("reportsWithUserDetails",reportedByUsers);
+    console.log("reportsWithUserDetails", reportedByUsers);
 
     return res.render("reportList", {
       reports: reportsWithUserDetails,
@@ -551,11 +395,361 @@ export const getReports = async (req, res) => {
     console.log("Error fetching reports:", error);
 
     return res.status(500).json({
-      success:false,
+      success: false,
       message: "Internal Server Error",
       error: error.message,
     });
 
   }
-   
+
+};
+
+export const paymentHistroy = async (req, res) => {
+  try {
+    const paymentHistory = await PayUModel.findAll();
+    res.render("paymentHistory", { paymentHistory })
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message
+    })
+  }
+};
+
+export const getallUSerSubscription = async (req, res) => {
+  try {
+    const getallUSerSubscription = await SubscriptionModel.findAll();
+    res.render("subscriptionPlan", { getallUSerSubscription })
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message
+    })
+  }
+};
+
+export const userProfileView = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await usermodel.findOne({ where: { id: id } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    console.log("user", user);
+    return res.render("userProfile", { user });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const AllUserReported = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const AllUserReported = await reportModel.findAll({ where: { reportedBy: id } });
+    console.log("AllUSerRepoted", AllUserReported);
+    return res.render("allReportedUser", { reports: AllUserReported });
+  }
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message
+    });
+  }
+};
+
+export const getNewUsersInMonth = async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    // Define the full date range for current month in local time
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const newUsers = await usermodel.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [firstDayOfMonth, lastDayOfMonth],
+        },
+      },
+    });
+    return res.render("user-list", { user: newUsers });
+
+
+  } catch (error) {
+    console.error("Error fetching new users:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const getDisabledUsersCount = async (req, res) => {
+  try {
+    //  Querry the database to get the count of disabled users 
+    const disabledUsers = await StatusModel.findAll({
+      where: {
+        status: "disable",  //Assuming the "status" column exists in the usermodel
+      },
+    });
+
+    // Step 2: Get user details of reported users from usermodel
+    const reportedUsers = await usermodel.findAll({
+      where: {
+        id: {
+          [Op.in]: disabledUsers.map(user => user.userId), // Assuming userId is the foreign key in StatusModel
+        },
+      },
+
+      // attributes: ['id', 'name', 'profileimage'],
+    });
+
+    console.log("reportedUsers", reportedUsers);
+
+    return res.render("user-list", { user: reportedUsers });
+
+  } catch (error) {
+    console.error("Error fetching disabled users count:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const getActiveUsers = async (req, res) => {
+  try {
+    // Step 1: Get all user IDs with status === "disable"
+    const disabledStatus = await StatusModel.findAll({
+      where: { status: 'disable' },
+      attributes: ['userId'], // Only get the userId field
+      raw: true,
+    });
+
+    // Extract just the IDs
+    const disabledUserIds = disabledStatus.map((status) => status.userId);
+
+    // Step 2: Get users from usermodel whose IDs are NOT in the list above
+    const activeUsers = await usermodel.findAll({
+      where: {
+        id: {
+          [Op.notIn]: disabledUserIds,
+        },
+      },
+    });
+
+    // Render or return filtered active users
+    return res.render('user-list', { user: activeUsers });
+
+  } catch (error) {
+    console.error("Error fetching active users:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const getReportedUsers = async (req, res) => {
+  try {
+    // Step 1: Get all distinct reportedTo user IDs from the reports table
+    const reportedUserIdsData = await reportModel.findAll({
+      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('reportedTo')), 'reportedTo']],
+      raw: true,
+    });
+
+    console.log("reportedUserIdsData", reportedUserIdsData);
+
+    const reportedUserIds = reportedUserIdsData.map(entry => entry.reportedTo);
+
+    console.log("reportedUserIds", reportedUserIds);
+
+    // Step 2: Get user details of reported users from usermodel
+    const reportedUsers = await usermodel.findAll({
+      where: {
+        id: {
+          [Op.in]: reportedUserIds,
+        },
+      },
+
+      // attributes: ['id', 'name', 'profileimage'],
+    });
+
+    console.log("reportedUsers", reportedUsers);
+
+    // Step 3: Count reported users
+    const reportedUsersCount = reportedUserIds.length;
+    console.log("reportedUsersCount", reportedUsersCount);
+
+    // Step 4: Render the user list with count
+    return res.render('user-list', {
+      user: reportedUsers,
+      reportedUsersCount,
+    });
+
+  } catch (error) {
+    console.error("Error fetching reported users:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const disabledUserByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = "disable";
+    const totalCount = '5';
+
+    console.log("Disabling user with ID:", id);
+
+    const user = await usermodel.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Optional: Check if already disabled
+    const alreadyDisabled = await StatusModel.findOne({ where: { userId: id, status } });
+    if (alreadyDisabled) {
+      return res.render("reportList");
+    }
+
+    const disableuser = new StatusModel({ 
+      userId: id,
+      status,
+      totalCount
+    });
+
+    await disableuser.save();
+
+    return res.redirect("/reported-users");
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+export const AddSubscription = async (req, res) => {
+  try {
+   const { planName, amount, planType, description } = req.body;
+
+      console.log("data", req.body);
+
+
+    // Handle POST request
+    
+    if (!planName || !amount || !planType) {
+      return res.status(400).render("AddSubscription", {
+        error: "All fields except description are required.",
+      });
+    }
+
+    await Subscription.create({
+      planName,
+      amount,
+      planType,
+      description,
+    });
+
+    return res.render("addSubscription");
+
+  } catch (error) {
+    console.error("Error creating subscription:", error);
+    res.status(500).render("addSubscription", {
+      error: "Internal Server Error",
+    });
+  }
+};
+
+
+ export const getSubscription = async (req, res) => {
+  try {
+    return res.render("addSubscription");
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+}; 
+
+export const SubscriptionList = async (req,res) => {
+  try{
+    const subscription = await Subscription_Plan.findAll();
+
+    console.log("subscription", subscription);
+
+    return res.render("Subscription_List", {subscription});
+  }
+   catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+export const editSubscription = async (req,res) => {
+  try{
+    const { id } = req.params;
+
+    const subscription = await Subscription_Plan.findByPk(id);
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found"});
+      
+    }
+     return res.render("Edit_subscription", { subscription });
+  } 
+
+  catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+
+export const updateSubscription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { planName, amount, planType, description } = req.body;
+
+    console.log("data", req.body);
+
+    if (!planName || !amount || !planType) {
+      return res.status(400).render("Edit_subscription", {
+        error: "All fields except description are required.",
+        subscription: { id, planName, amount, planType, description }
+      });
+    }
+
+    const subscription = await Subscription_Plan.findByPk(id);
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found" });
+    }
+
+    // Update fields
+    subscription.planName = planName;
+    subscription.amount = amount;
+    subscription.planType = planType;
+    subscription.description = description;
+
+    await subscription.save();
+
+    // Redirect to the subscription list after update
+    return res.redirect("/Susbscrption_List");
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
 };

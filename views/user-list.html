@@ -18,40 +18,33 @@
   <table id="userTable" class="display">
     <thead>
       <tr>
-        <th>ID</th>
+        <!-- <th>ID</th> -->
+      
+         <th>index</th>
+         <th>profileimage</th>
         <th>Name</th>
         <th>Email</th>
         <th>Phone</th>
-        <th>Age</th>
-        <th>Gender</th>
-        <th>About</th>
-        <th>Looking-For</th>
-        <th>Interest</th>
-        <!-- <th>Status</th> -->
-        <!-- <th>Dcetive</th> -->
-        <!-- <th>ChatUser</th> -->
+        <th>view</th>
         <th>Report</th>
-        <!-- <th>Delete</th> -->
+       
+       
        
       </tr>
     </thead>
     <tbody>
         {{#each user}}
       <tr>
-        <td>{{this.id}}</td>
+        <!-- <td>{{this.id}}</td> -->
+    
+        
+        <td>{{inc @index}}</td>
+        <td><img src="/profile-images/{{this.profileimage}}" width="100" height="100"></img></td>
         <td>{{this.name}}</td>
         <td>{{this.email}}</td>
         <td>{{this.phonenumber}}</td>
-        <td>{{this.age}}</td>
-        <td>{{this.gender}}</td>
-        <td>{{this.about}}</td>
-        <td>{{this.looking_for}}</td>
-        <td>{{this.interest}}</td>
-        <!-- <td><a href="/status"><button type="button" class="btn btn-outline-primary mb-2">Active</button></a></td> -->
-        <!-- <td><a href="/statusUpdate"><button type="button" class="btn btn-outline-primary mb-2">Dective</button></a></td> -->
-        <!-- <td><a href="/chatlist/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">chatuser</button></a></td> -->
-        <td><a href="/reports/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">Reports</button></a></td> 
-        <!-- <td><button type="button" class="btn btn-outline-danger mb-2">Delete</button></td> -->
+        <td><a href="/user-profile/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">View</button></a></td> 
+        <td><a href="/reports/{{this.id}}"><button type="button" class="btn btn-outline-primary mb-2">Reports</button></a></td>  
       </tr>
       {{/each}}
     </tbody>
